@@ -4,7 +4,7 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="../../../vendor/squizlabs/php_codesniffer/phpcs.xsd"
 >
-    <config name="installed_paths" value="../../croct/coding-standard/src"/>
+    <config name="installed_paths" value="../../croct/coding-standard/src,../../slevomat/coding-standard"/>
 
     <arg name="cache" value=".cache/phpcs.cache.json"/>
     <arg name="basepath" value="."/>
@@ -12,7 +12,18 @@
     <arg name="colors" />
     <arg value="p"/>
 
-    <rule ref="Croct"/>
+    <rule ref="Croct">
+        <!-- False positives for multiline arrays with closure as value, remove once fixed: -->
+        <exclude name="Squiz.Arrays.ArrayDeclaration.ValueNoNewline"/>
+    </rule>
+
+    <!--
+        ApiKey::parse() keeps #[\SensitiveParameter] inline on a single-line signature, which the
+        single-line method-signature rule requires but this sniff forbids; exclude it for this file.
+    -->
+    <rule ref="SlevomatCodingStandard.Attributes.AttributeAndTargetSpacing">
+        <exclude-pattern>src/ApiKey.php</exclude-pattern>
+    </rule>
 
     <file>src</file>
     <file>tests</file>

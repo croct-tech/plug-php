@@ -1,0 +1,62 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Croct\Plug;
+
+use Croct\Plug\Exception\CroctException;
+
+/**
+ * Public API for server-side applications integrating with Croct.
+ */
+interface Plug
+{
+    /**
+     * Returns the configured application ID.
+     */
+    public function getAppId(): string;
+
+    /**
+     * Returns the visitor's client ID.
+     */
+    public function getClientId(): string;
+
+    /**
+     * Returns the visitor's serialized user token.
+     */
+    public function getUserToken(): string;
+
+    /**
+     * Returns the options for bootstrapping the client-side SDK.
+     *
+     * The result is JSON-encodable and carries the resolved identity together with the cookie
+     * settings, so the client SDK reads and writes the same cookies as the server.
+     *
+     * @return array<string, mixed>
+     */
+    public function getPlugOptions(): array;
+
+    /**
+     * Marks the visitor as a known user.
+     */
+    public function identify(string $userId): void;
+
+    /**
+     * Resets the visitor to anonymous.
+     */
+    public function anonymize(): void;
+
+    /**
+     * Evaluates a CQL query against the visitor's context.
+     *
+     * @throws CroctException If the query is invalid or the request fails without a fallback.
+     */
+    public function evaluate(string $query, ?EvaluationOptions $options = null): mixed;
+
+    /**
+     * Fetches the personalized content of a slot.
+     *
+     * @throws CroctException If the request fails without a fallback.
+     */
+    public function fetchContent(string $slotId, ?FetchOptions $options = null): FetchResponse;
+}

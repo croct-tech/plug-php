@@ -1,0 +1,194 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Croct\Plug\Tests;
+
+use Croct\Plug\ApiKey;
+use Croct\Plug\InMemoryIdentityStore;
+use Croct\Plug\Session;
+use Croct\Plug\Token;
+use Croct\Plug\Uuid;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\TestDox;
+use PHPUnit\Framework\TestCase;
+
+#[CoversClass(Session::class)]
+#[TestDox('A visitor session')]
+final class SessionTest extends TestCase
+{
+    private const APP_ID = '7e9d59a9-e4b3-45d4-b1c7-48287f1e5e8a';
+
+    private const CLIENT_ID = '11111111-2222-4333-8444-555555555555';
+
+    #[TestDox('Generates a client ID when none is present.')]
+    public function testGeneratesClientIdWhenMissing(): void
+    {
+        $session = $this->createSession(null);
+
+        self::assertMatchesRegularExpression(
+            '/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/',
+            $session->getClientId()->toString(),
+        );
+    }
+
+    #[TestDox('Reuses the stored client ID.')]
+    public function testReusesStoredClientId(): void
+    {
+        $clientId = Uuid::parse(self::CLIENT_ID);
+
+        $session = $this->createSession($clientId);
+
+        self::assertSame($clientId, $session->getClientId());
+    }
+
+    #[TestDox('Issues an anonymous, unsigned token without a prior token.')]
+    public function testIssuesAnonymousUnsignedTokenWithoutToken(): void
+    {
+        $session = $this->createSession(null);
+
+        self::assertTrue($session->getUserToken()->isAnonymous());
+        self::assertFalse($session->getUserToken()->isSigned());
+    }
+
+    #[TestDox('Signs the token when the API key carries a private key.')]
+    public function testSignsTokenWhenKeyHasPrivateKey(): void
+    {
+        [$apiKey] = EcKeyFactory::create();
+
+        $session = $this->createSession(null, null, $apiKey);
+
+        self::assertTrue($session->getUserToken()->isSigned());
+        self::assertTrue($session->getUserToken()->matchesKeyId($apiKey));
+    }
+
+    #[TestDox('Keeps a valid token untouched.')]
+    public function testKeepsValidToken(): void
+    {
+        $token = Token::issue(appId: self::APP_ID, subject: 'user-7', now: 1000)->withDuration(86400, 1000);
+
+        $session = $this->createSession(null, $token);
+
+        self::assertSame($token->toString(), $session->getUserToken()->toString());
+    }
+
+    #[TestDox('Carries the subject over when refreshing an expired token.')]
+    public function testCarriesOverSubjectFromExpiredToken(): void
+    {
+        $expired = Token::issue(appId: self::APP_ID, subject: 'user-9', now: 100)->withDuration(86400, 100);
+
+        $session = $this->createSession(null, $expired, now: 200000);
+
+        self::assertSame('user-9', $session->getUserToken()->getSubject());
+        self::assertTrue($session->getUserToken()->isValidNow(200000));
+    }
+
+    #[TestDox('Upgrades an unsigned token to a signed one.')]
+    public function testUpgradesUnsignedTokenToSigned(): void
+    {
+        [$apiKey] = EcKeyFactory::create();
+        $unsigned = Token::issue(appId: self::APP_ID, subject: 'user-3', now: 1000)->withDuration(86400, 1000);
+
+        $session = $this->createSession(null, $unsigned, $apiKey);
+
+        self::assertTrue($session->getUserToken()->isSigned());
+        self::assertSame('user-3', $session->getUserToken()->getSubject());
+    }
+
+    #[TestDox('Issues an anonymous token when the token belongs to another application.')]
+    public function testIssuesAnonymousForForeignAppToken(): void
+    {
+        $foreign = Token::issue(appId: '99999999-9999-4999-8999-999999999999', subject: 'user-x', now: 1000)
+            ->withDuration(86400, 1000);
+
+        $session = $this->createSession(null, $foreign);
+
+        self::assertTrue($session->getUserToken()->isAnonymous());
+        self::assertSame(self::APP_ID, $session->getUserToken()->getApplicationId());
+    }
+
+    #[TestDox('Discards a foreign application token even when it is expired, never carrying its subject over.')]
+    public function testIssuesAnonymousForExpiredForeignAppToken(): void
+    {
+        $foreign = Token::issue(appId: '99999999-9999-4999-8999-999999999999', subject: 'user-x', now: 100)
+            ->withDuration(86400, 100);
+
+        $session = $this->createSession(null, $foreign, now: 200000);
+
+        self::assertTrue($session->getUserToken()->isAnonymous());
+        self::assertSame(self::APP_ID, $session->getUserToken()->getApplicationId());
+    }
+
+    #[TestDox('Reflects identification and anonymization in the token.')]
+    public function testIdentifyAndAnonymize(): void
+    {
+        $session = $this->createSession(null);
+
+        $session->identify('user-42');
+        self::assertSame('user-42', $session->getUserToken()->getSubject());
+
+        $session->anonymize();
+        self::assertTrue($session->getUserToken()->isAnonymous());
+    }
+
+    #[TestDox('Rejects identifying with an empty user ID.')]
+    public function testRejectsEmptyUserId(): void
+    {
+        $session = $this->createSession(null);
+
+        $this->expectException(\InvalidArgumentException::class);
+
+        $session->identify('');
+    }
+
+    #[TestDox('Re-signs a token that was signed with a different key, preserving subject and ID.')]
+    public function testReSignsTokenFromDifferentKey(): void
+    {
+        [$sessionKey] = EcKeyFactory::create();
+        [$otherKey] = EcKeyFactory::create('11111111-1111-4111-8111-111111111111');
+
+        $foreign = Token::issue(appId: self::APP_ID, subject: 'user-1', now: 1000)
+            ->withDuration(86400, 1000)
+            ->withTokenId('22222222-2222-4222-8222-222222222222')
+            ->signedWith($otherKey);
+
+        $token = $this->createSession(null, $foreign, $sessionKey)->getUserToken();
+
+        self::assertTrue($token->isSigned());
+        self::assertTrue($token->matchesKeyId($sessionKey));
+        self::assertSame('user-1', $token->getSubject());
+        self::assertSame('22222222-2222-4222-8222-222222222222', $token->getTokenId());
+    }
+
+    #[TestDox('Treats an empty subject as anonymous when reissuing.')]
+    public function testTreatsEmptySubjectAsAnonymous(): void
+    {
+        [$sessionKey] = EcKeyFactory::create();
+
+        $unsigned = Token::of(
+            ['typ' => 'JWT', 'alg' => 'none', 'appId' => self::APP_ID],
+            ['iss' => 'croct.io', 'aud' => 'croct.io', 'iat' => 1000, 'exp' => 87400, 'sub' => ''],
+        );
+
+        $token = $this->createSession(null, $unsigned, $sessionKey)->getUserToken();
+
+        self::assertTrue($token->isSigned());
+        self::assertTrue($token->isAnonymous());
+    }
+
+    private function createSession(
+        ?Uuid $clientId,
+        ?Token $userToken = null,
+        ?ApiKey $apiKey = null,
+        int $now = 1000,
+    ): Session {
+        return new Session(
+            appId: self::APP_ID,
+            apiKey: $apiKey ?? ApiKey::of(EcKeyFactory::IDENTIFIER),
+            store: new InMemoryIdentityStore($clientId, $userToken),
+            tokenDuration: 86400,
+            signTokens: null,
+            now: $now,
+        );
+    }
+}
