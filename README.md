@@ -18,7 +18,7 @@
 <br/>
 <p align="center">
     <a href="https://packagist.org/packages/croct/plug-php"><img alt="Version" src="https://img.shields.io/packagist/v/croct/plug-php"/></a>
-    <a href="https://github.com/croct-tech/plug-php/actions/workflows/validate-branch.yaml"><img alt="Build" src="https://img.shields.io/github/actions/workflow/status/croct-tech/plug-php/validate-branch.yaml?branch=master"/></a>
+    <a href="https://github.com/croct-tech/plug-php/actions/workflows/validate-branch.yaml"><img alt="Build" src="https://github.com/croct-tech/plug-php/actions/workflows/validate-branch.yaml/badge.svg"/></a>
 </p>
 
 ## Introduction
