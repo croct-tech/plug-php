@@ -70,7 +70,7 @@ final class Croct implements Plug
         #[\SensitiveParameter]
         ApiKey|string $apiKey,
         IdentityStore $storage,
-        string $baseEndpointUrl = self::DEFAULT_BASE_ENDPOINT_URL,
+        ?string $baseEndpointUrl = null,
         int $tokenDuration = self::DEFAULT_TOKEN_DURATION,
         ?ContentProvider $contentProvider = null,
         ?RequestContext $context = null,
@@ -81,6 +81,7 @@ final class Croct implements Plug
     ): self {
         $key = ApiKey::from($apiKey);
         $context ??= RequestContext::fromGlobals();
+        $baseEndpointUrl ??= self::DEFAULT_BASE_ENDPOINT_URL;
 
         $session = new Session($appId, $key, $storage, $tokenDuration);
 
@@ -107,7 +108,6 @@ final class Croct implements Plug
             logger: $logger,
             baseEndpointUrl: $baseEndpointUrl,
             version: $version,
-            identity: $session,
         );
 
         $cookieConfiguration = $storage instanceof CookieStorage
@@ -117,8 +117,13 @@ final class Croct implements Plug
         return new self(
             $appId,
             $session,
-            new HttpEvaluator($client, $context),
-            new HttpContentFetcher($client, $context, $contentProvider ?? self::discoverContentProvider()),
+            new HttpEvaluator($client, $context, $session),
+            new HttpContentFetcher(
+                $client,
+                $context,
+                $session,
+                $contentProvider ?? self::discoverContentProvider(),
+            ),
             $cookieConfiguration,
         );
     }

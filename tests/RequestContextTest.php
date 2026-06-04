@@ -57,6 +57,17 @@ final class RequestContextTest extends TestCase
         );
     }
 
+    #[TestDox('Omits the page context when the URL is unknown, even with a referrer.')]
+    public function testOmitsPageWithoutUrl(): void
+    {
+        $context = new RequestContext(referrer: 'https://ref.example');
+
+        self::assertSame(
+            ['attributes' => ['plan' => 'pro']],
+            $context->toEvaluationContext(['plan' => 'pro']),
+        );
+    }
+
     #[TestDox('Reads the request signals from the superglobals.')]
     public function testReadsSignalsFromGlobals(): void
     {
@@ -101,13 +112,58 @@ final class RequestContextTest extends TestCase
         self::assertSame('en-us', $context->getPreferredLocale());
     }
 
+    #[TestDox('Reads the preview token from the query parameter of the superglobals.')]
+    public function testReadsPreviewTokenFromGlobals(): void
+    {
+        $context = self::withGlobals(
+            ['HTTP_HOST' => 'example.com', 'REQUEST_URI' => '/'],
+            ['croct-preview' => 'preview-jwt'],
+            static fn (): RequestContext => RequestContext::fromGlobals(),
+        );
+
+        self::assertSame('preview-jwt', $context->getPreviewToken());
+    }
+
+    #[TestDox('Treats the preview-exit sentinel as no preview.')]
+    public function testIgnoresPreviewExitSentinel(): void
+    {
+        $context = self::withGlobals(
+            ['HTTP_HOST' => 'example.com', 'REQUEST_URI' => '/'],
+            ['croct-preview' => 'exit'],
+            static fn (): RequestContext => RequestContext::fromGlobals(),
+        );
+
+        self::assertNull($context->getPreviewToken());
+    }
+
+    #[TestDox('Reads the preview token from the query parameters of a PSR-7 server request.')]
+    public function testReadsPreviewTokenFromServerRequest(): void
+    {
+        $factory = new Psr17Factory();
+        $request = $factory->createServerRequest('GET', 'https://example.com/')
+            ->withQueryParams(['croct-preview' => 'preview-jwt']);
+
+        self::assertSame('preview-jwt', RequestContext::fromServerRequest($request)->getPreviewToken());
+    }
+
     /**
      * @param array<string, string>      $server
      * @param callable(): RequestContext $callback
      */
     private static function withServer(array $server, callable $callback): RequestContext
     {
+        return self::withGlobals($server, [], $callback);
+    }
+
+    /**
+     * @param array<string, string>      $server
+     * @param array<string, string>      $query
+     * @param callable(): RequestContext $callback
+     */
+    private static function withGlobals(array $server, array $query, callable $callback): RequestContext
+    {
         $_SERVER = $server;
+        $_GET = $query;
 
         return $callback();
     }

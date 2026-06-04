@@ -6,11 +6,7 @@ namespace Croct\Plug\Tests;
 
 use Croct\Plug\ApiKey;
 use Croct\Plug\Exception\ApiException;
-use Croct\Plug\InMemoryIdentityStore;
 use Croct\Plug\PsrApiClient;
-use Croct\Plug\RequestContext;
-use Croct\Plug\Token;
-use Croct\Plug\Uuid;
 use Http\Client\Exception\NetworkException;
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Factory\Psr17Factory;
@@ -18,18 +14,13 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\RequestInterface;
-use Psr\Log\NullLogger;
 
 #[CoversClass(PsrApiClient::class)]
 #[TestDox('A PSR-based API client')]
 final class PsrApiClientTest extends TestCase
 {
-    private const APP_ID = '7e9d59a9-e4b3-45d4-b1c7-48287f1e5e8a';
-
-    private const CLIENT_ID = '11111111-2222-4333-8444-555555555555';
-
-    #[TestDox('Sends an authenticated request with the visitor headers and decodes the response.')]
-    public function testSendsAuthenticatedRequest(): void
+    #[TestDox('Sends a request with the given headers and decodes the response.')]
+    public function testSendsRequestWithHeaders(): void
     {
         $factory = new Psr17Factory();
         $mock = new MockClient();
@@ -38,26 +29,21 @@ final class PsrApiClientTest extends TestCase
         );
 
         $apiKey = ApiKey::of(EcKeyFactory::IDENTIFIER);
-        $clientId = Uuid::parse(self::CLIENT_ID);
-        $token = Token::issue(appId: self::APP_ID, subject: 'user-1', now: 1000);
 
         $client = new PsrApiClient(
             httpClient: $mock,
             requestFactory: $factory,
             streamFactory: $factory,
             apiKey: $apiKey,
-            logger: new NullLogger(),
             baseEndpointUrl: 'https://api.croct.io',
             version: '1.0.0',
-            identity: new InMemoryIdentityStore($clientId, $token),
         );
 
-        $context = new RequestContext(
-            clientAgent: 'Test/1.0',
-            clientIp: '8.8.8.8',
+        $result = $client->send(
+            'external/web/evaluate',
+            ['query' => 'true'],
+            ['X-Client-Id' => 'client-1', 'X-Client-Ip' => '8.8.8.8'],
         );
-
-        $result = $client->send('external/web/evaluate', ['query' => 'true'], $context);
 
         self::assertSame(['ok' => true], $result);
 
@@ -70,15 +56,48 @@ final class PsrApiClientTest extends TestCase
         self::assertSame('no-store', $request->getHeaderLine('Cache-Control'));
         self::assertSame('Croct SDK PHP v1.0.0', $request->getHeaderLine('X-Client-Library'));
         self::assertSame($apiKey->getIdentifier(), $request->getHeaderLine('X-Api-Key'));
-        self::assertSame($clientId->toString(), $request->getHeaderLine('X-Client-Id'));
-        self::assertSame($token->toString(), $request->getHeaderLine('X-Token'));
+        self::assertSame('client-1', $request->getHeaderLine('X-Client-Id'));
         self::assertSame('8.8.8.8', $request->getHeaderLine('X-Client-Ip'));
-        self::assertSame('Test/1.0', $request->getHeaderLine('X-Client-Agent'));
         self::assertSame(['query' => 'true'], \json_decode((string) $request->getBody(), true));
     }
 
-    #[TestDox('Omits absent visitor headers and the version when none is set.')]
-    public function testOmitsAbsentHeaders(): void
+    #[TestDox('Skips headers with a null value while keeping the application headers.')]
+    public function testSkipsNullHeaders(): void
+    {
+        $factory = new Psr17Factory();
+        $mock = new MockClient();
+        $mock->addResponse($factory->createResponse(200));
+
+        $apiKey = ApiKey::of(EcKeyFactory::IDENTIFIER);
+
+        $client = new PsrApiClient(
+            httpClient: $mock,
+            requestFactory: $factory,
+            streamFactory: $factory,
+            apiKey: $apiKey,
+        );
+
+        $result = $client->send(
+            'external/web/static-content',
+            [],
+            ['X-Client-Id' => null, 'X-Token' => null, 'X-Client-Ip' => '8.8.8.8'],
+        );
+
+        self::assertNull($result);
+
+        $request = $mock->getLastRequest();
+
+        self::assertInstanceOf(RequestInterface::class, $request);
+        self::assertFalse($request->hasHeader('X-Client-Id'));
+        self::assertFalse($request->hasHeader('X-Token'));
+        self::assertSame('8.8.8.8', $request->getHeaderLine('X-Client-Ip'));
+        // The library and key headers identify the application, not the visitor, so they remain.
+        self::assertSame('Croct SDK PHP', $request->getHeaderLine('X-Client-Library'));
+        self::assertSame($apiKey->getIdentifier(), $request->getHeaderLine('X-Api-Key'));
+    }
+
+    #[TestDox('Sends only the application headers when none are given.')]
+    public function testSendsWithoutRequestHeaders(): void
     {
         $factory = new Psr17Factory();
         $mock = new MockClient();
@@ -91,9 +110,7 @@ final class PsrApiClientTest extends TestCase
             apiKey: ApiKey::of(EcKeyFactory::IDENTIFIER),
         );
 
-        $result = $client->send('external/web/evaluate', [], new RequestContext());
-
-        self::assertNull($result);
+        $client->send('external/web/evaluate', []);
 
         $request = $mock->getLastRequest();
 
@@ -121,7 +138,7 @@ final class PsrApiClientTest extends TestCase
 
         $this->expectException(ApiException::class);
 
-        $client->send('external/web/evaluate', [], new RequestContext());
+        $client->send('external/web/evaluate', []);
     }
 
     #[TestDox('Reports an error status with the problem title.')]
@@ -141,7 +158,7 @@ final class PsrApiClientTest extends TestCase
         );
 
         try {
-            $client->send('external/web/evaluate', [], new RequestContext());
+            $client->send('external/web/evaluate', []);
             self::fail('Expected an ApiException.');
         } catch (ApiException $exception) {
             self::assertSame('Bad', $exception->getMessage());
@@ -167,7 +184,7 @@ final class PsrApiClientTest extends TestCase
 
         $this->expectException(ApiException::class);
 
-        $client->send('external/web/evaluate', [], new RequestContext());
+        $client->send('external/web/evaluate', []);
     }
 
     #[TestDox('Reports an invalid response body as an exception.')]
@@ -186,7 +203,7 @@ final class PsrApiClientTest extends TestCase
 
         $this->expectException(ApiException::class);
 
-        $client->send('external/web/evaluate', [], new RequestContext());
+        $client->send('external/web/evaluate', []);
     }
 
     #[TestDox('Reports an unencodable payload as an exception.')]
@@ -202,10 +219,6 @@ final class PsrApiClientTest extends TestCase
 
         $this->expectException(ApiException::class);
 
-        $client->send(
-            'external/web/evaluate',
-            ['value' => "\xB1\x31"],
-            new RequestContext(),
-        );
+        $client->send('external/web/evaluate', ['value' => "\xB1\x31"]);
     }
 }

@@ -8,7 +8,6 @@ use Croct\Plug\Exception\ApiException;
 use Psr\Http\Client\ClientExceptionInterface as ClientException;
 use Psr\Http\Client\ClientInterface as HttpClient;
 use Psr\Http\Message\RequestFactoryInterface as RequestFactory;
-use Psr\Http\Message\RequestInterface as Request;
 use Psr\Http\Message\StreamFactoryInterface as StreamFactory;
 use Psr\Log\LoggerInterface as Logger;
 use Psr\Log\NullLogger;
@@ -37,8 +36,6 @@ final class PsrApiClient implements ApiClient
 
     private Logger $logger;
 
-    private ?IdentityStore $identity;
-
     public function __construct(
         HttpClient $httpClient,
         RequestFactory $requestFactory,
@@ -47,7 +44,6 @@ final class PsrApiClient implements ApiClient
         ?Logger $logger = null,
         string $baseEndpointUrl = Croct::DEFAULT_BASE_ENDPOINT_URL,
         ?string $version = null,
-        ?IdentityStore $identity = null,
     ) {
         $this->httpClient = $httpClient;
         $this->requestFactory = $requestFactory;
@@ -58,13 +54,13 @@ final class PsrApiClient implements ApiClient
             ? self::CLIENT_LIBRARY
             : self::CLIENT_LIBRARY . ' v' . $version;
         $this->logger = $logger ?? new NullLogger();
-        $this->identity = $identity;
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param array<string, mixed>       $payload
+     * @param array<string, string|null> $headers
      */
-    public function send(string $path, array $payload, RequestContext $context): mixed
+    public function send(string $path, array $payload, array $headers = []): mixed
     {
         $url = \rtrim($this->baseEndpointUrl, '/') . '/' . $path;
 
@@ -82,7 +78,11 @@ final class PsrApiClient implements ApiClient
             ->withHeader(HttpHeader::API_KEY->value, $this->apiKey->getIdentifier())
             ->withBody($this->streamFactory->createStream($body));
 
-        $request = $this->withClientHeaders($request, $context);
+        foreach ($headers as $name => $value) {
+            if ($value !== null) {
+                $request = $request->withHeader($name, $value);
+            }
+        }
 
         try {
             $response = $this->httpClient->sendRequest($request);
@@ -102,7 +102,7 @@ final class PsrApiClient implements ApiClient
         }
 
         if ($status === 202) {
-            throw new ApiException('The Croct service is temporarily unavailable. Please retry shortly.', $status);
+            throw new ApiException('The Croct service is temporarily unavailable.', $status);
         }
 
         if ($status >= 400) {
@@ -110,26 +110,5 @@ final class PsrApiClient implements ApiClient
         }
 
         return $data;
-    }
-
-    /**
-     * Adds the available visitor-identifying headers to the request.
-     */
-    private function withClientHeaders(Request $request, RequestContext $context): Request
-    {
-        $headers = [
-            HttpHeader::CLIENT_ID->value => $this->identity?->getClientId()?->toString(),
-            HttpHeader::TOKEN->value => $this->identity?->getUserToken()?->toString(),
-            HttpHeader::CLIENT_IP->value => $context->getClientIp(),
-            HttpHeader::CLIENT_AGENT->value => $context->getClientAgent(),
-        ];
-
-        foreach ($headers as $name => $value) {
-            if ($value !== null) {
-                $request = $request->withHeader($name, $value);
-            }
-        }
-
-        return $request;
     }
 }

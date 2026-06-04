@@ -11,8 +11,12 @@ use Croct\Plug\Content\ContentSource;
 use Croct\Plug\Exception\ContentException;
 use Croct\Plug\FetchOptions;
 use Croct\Plug\HttpContentFetcher;
+use Croct\Plug\IdentityStore;
+use Croct\Plug\InMemoryIdentityStore;
 use Croct\Plug\PsrApiClient;
 use Croct\Plug\RequestContext;
+use Croct\Plug\Token;
+use Croct\Plug\Uuid;
 use Http\Mock\Client as MockClient;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -24,6 +28,10 @@ use Psr\Http\Message\RequestInterface;
 #[TestDox('A content fetcher')]
 final class HttpContentFetcherTest extends TestCase
 {
+    private const APP_ID = '7e9d59a9-e4b3-45d4-b1c7-48287f1e5e8a';
+
+    private const CLIENT_ID = '11111111-2222-4333-8444-555555555555';
+
     #[TestDox('Fetches a slot and returns its content and typed metadata.')]
     public function testFetchesContent(): void
     {
@@ -113,7 +121,7 @@ final class HttpContentFetcherTest extends TestCase
         );
     }
 
-    #[TestDox('Uses the static-content endpoint for static fetches.')]
+    #[TestDox('Uses the static-content endpoint and omits the visitor signals for static fetches.')]
     public function testFetchesStaticContent(): void
     {
         $factory = new Psr17Factory();
@@ -122,13 +130,54 @@ final class HttpContentFetcherTest extends TestCase
             $factory->createResponse(200)->withBody($factory->createStream((string) \json_encode(['content' => []]))),
         );
 
-        $this->createFetcher($mock, $factory)
+        // Static content is impersonal: neither the page context nor the visitor headers are sent.
+        $context = new RequestContext(
+            previewToken: 'preview-token',
+            url: 'https://example.com/',
+            clientAgent: 'Test/1.0',
+            clientIp: '8.8.8.8',
+        );
+        $identity = new InMemoryIdentityStore(
+            Uuid::parse(self::CLIENT_ID),
+            Token::issue(appId: self::APP_ID, now: 1000),
+        );
+
+        $this->createFetcher($mock, $factory, $context, identity: $identity)
             ->fetch('home-hero', FetchOptions::empty()->withStatic());
 
         $request = $mock->getLastRequest();
 
         self::assertInstanceOf(RequestInterface::class, $request);
         self::assertSame('https://api.croct.io/external/web/static-content', (string) $request->getUri());
+        self::assertSame(['slotId' => 'home-hero'], \json_decode((string) $request->getBody(), true));
+        self::assertFalse($request->hasHeader('X-Client-Id'));
+        self::assertFalse($request->hasHeader('X-Token'));
+        self::assertFalse($request->hasHeader('X-Client-Ip'));
+        self::assertFalse($request->hasHeader('X-Client-Agent'));
+    }
+
+    #[TestDox('Sends the visitor headers from the session and context for dynamic content.')]
+    public function testSendsVisitorHeadersForDynamicContent(): void
+    {
+        $factory = new Psr17Factory();
+        $mock = new MockClient();
+        $mock->addResponse(
+            $factory->createResponse(200)->withBody($factory->createStream((string) \json_encode(['content' => []]))),
+        );
+
+        $context = new RequestContext(clientAgent: 'Test/1.0', clientIp: '8.8.8.8');
+        $token = Token::issue(appId: self::APP_ID, now: 1000);
+        $identity = new InMemoryIdentityStore(Uuid::parse(self::CLIENT_ID), $token);
+
+        $this->createFetcher($mock, $factory, $context, identity: $identity)->fetch('home-hero');
+
+        $request = $mock->getLastRequest();
+
+        self::assertInstanceOf(RequestInterface::class, $request);
+        self::assertSame(self::CLIENT_ID, $request->getHeaderLine('X-Client-Id'));
+        self::assertSame($token->toString(), $request->getHeaderLine('X-Token'));
+        self::assertSame('8.8.8.8', $request->getHeaderLine('X-Client-Ip'));
+        self::assertSame('Test/1.0', $request->getHeaderLine('X-Client-Agent'));
     }
 
     #[TestDox('Forwards the preview token from the request context.')]
@@ -215,6 +264,7 @@ final class HttpContentFetcherTest extends TestCase
         Psr17Factory $factory,
         ?RequestContext $context = null,
         ?ContentProvider $contentProvider = null,
+        ?IdentityStore $identity = null,
     ): HttpContentFetcher {
         $context ??= new RequestContext();
 
@@ -224,11 +274,11 @@ final class HttpContentFetcherTest extends TestCase
                 requestFactory: $factory,
                 streamFactory: $factory,
                 apiKey: ApiKey::of(EcKeyFactory::IDENTIFIER),
-                logger: null,
                 baseEndpointUrl: 'https://api.croct.io',
             ),
             $context,
-            $contentProvider,
+            identity: $identity,
+            contentProvider: $contentProvider,
         );
     }
 }

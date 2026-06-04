@@ -14,6 +14,10 @@ use Psr\Http\Message\ServerRequestInterface as ServerRequest;
  */
 final class RequestContext
 {
+    private const PREVIEW_QUERY_PARAMETER = 'croct-preview';
+
+    private const PREVIEW_EXIT = 'exit';
+
     private ?string $previewToken;
 
     private ?string $url;
@@ -61,12 +65,17 @@ final class RequestContext
         $forwardedFor = self::getOptionalString($server['HTTP_X_FORWARDED_FOR'] ?? null)
             ?? self::getOptionalString($server['REMOTE_ADDR'] ?? null);
 
+        /** @var array<array-key, mixed> $query */
+        $query = $_GET;
+
         return new self(
-            null,
-            $url,
-            self::getOptionalString($server['HTTP_REFERER'] ?? null),
-            self::getOptionalString($server['HTTP_USER_AGENT'] ?? null),
-            $forwardedFor !== null ? \trim(\explode(',', $forwardedFor)[0]) : null,
+            previewToken: self::resolvePreviewToken(
+                self::getOptionalString($query[self::PREVIEW_QUERY_PARAMETER] ?? null),
+            ),
+            url: $url,
+            referrer: self::getOptionalString($server['HTTP_REFERER'] ?? null),
+            clientAgent: self::getOptionalString($server['HTTP_USER_AGENT'] ?? null),
+            clientIp: $forwardedFor !== null ? \trim(\explode(',', $forwardedFor)[0]) : null,
         );
     }
 
@@ -83,12 +92,16 @@ final class RequestContext
 
         $url = (string) $request->getUri();
 
+        $query = $request->getQueryParams();
+
         return new self(
-            null,
-            $url !== '' ? $url : null,
-            self::getOptionalHeader($request, 'Referer'),
-            self::getOptionalHeader($request, 'User-Agent'),
-            $forwardedFor !== null ? \trim(\explode(',', $forwardedFor)[0]) : null,
+            previewToken: self::resolvePreviewToken(
+                self::getOptionalString($query[self::PREVIEW_QUERY_PARAMETER] ?? null),
+            ),
+            url: $url !== '' ? $url : null,
+            referrer: self::getOptionalHeader($request, 'Referer'),
+            clientAgent: self::getOptionalHeader($request, 'User-Agent'),
+            clientIp: $forwardedFor !== null ? \trim(\explode(',', $forwardedFor)[0]) : null,
         );
     }
 
@@ -162,17 +175,14 @@ final class RequestContext
     public function toEvaluationContext(array $attributes = []): array
     {
         $context = [];
-        $page = [];
 
         if ($this->url !== null) {
-            $page['url'] = $this->url;
-        }
+            $page = ['url' => $this->url];
 
-        if ($this->referrer !== null) {
-            $page['referrer'] = $this->referrer;
-        }
+            if ($this->referrer !== null) {
+                $page['referrer'] = $this->referrer;
+            }
 
-        if ($page !== []) {
             $context['page'] = $page;
         }
 
@@ -181,6 +191,14 @@ final class RequestContext
         }
 
         return $context;
+    }
+
+    /**
+     * Resolves the preview token from the request, treating the preview-exit sentinel as no preview.
+     */
+    private static function resolvePreviewToken(?string $token): ?string
+    {
+        return $token === null || $token === self::PREVIEW_EXIT ? null : $token;
     }
 
     /**

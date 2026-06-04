@@ -22,15 +22,19 @@ final class HttpContentFetcher implements ContentFetcher
 
     private RequestContext $context;
 
+    private ?IdentityStore $identity;
+
     private ContentProvider $contentProvider;
 
     public function __construct(
         ApiClient $client,
         RequestContext $context,
+        ?IdentityStore $identity = null,
         ?ContentProvider $contentProvider = null,
     ) {
         $this->client = $client;
         $this->context = $context;
+        $this->identity = $identity;
         $this->contentProvider = $contentProvider ?? new NullContentProvider();
     }
 
@@ -38,6 +42,7 @@ final class HttpContentFetcher implements ContentFetcher
     {
         $options ??= FetchOptions::empty();
         $context = $this->context;
+        $static = $options->isStatic();
 
         $payload = ['slotId' => $slotId];
 
@@ -57,22 +62,34 @@ final class HttpContentFetcher implements ContentFetcher
             $payload['includeSchema'] = true;
         }
 
-        $previewToken = $context->getPreviewToken();
+        // Static content is impersonal: it carries no visitor signals, preview, or page context.
+        $headers = [];
 
-        if ($previewToken !== null) {
-            $payload['previewToken'] = $previewToken;
+        if (!$static) {
+            $previewToken = $context->getPreviewToken();
+
+            if ($previewToken !== null) {
+                $payload['previewToken'] = $previewToken;
+            }
+
+            $evaluationContext = $context->toEvaluationContext($options->getAttributes());
+
+            if ($evaluationContext !== []) {
+                $payload['context'] = $evaluationContext;
+            }
+
+            $headers = [
+                HttpHeader::CLIENT_ID->value => $this->identity?->getClientId()?->toString(),
+                HttpHeader::TOKEN->value => $this->identity?->getUserToken()?->toString(),
+                HttpHeader::CLIENT_IP->value => $context->getClientIp(),
+                HttpHeader::CLIENT_AGENT->value => $context->getClientAgent(),
+            ];
         }
 
-        $evaluationContext = $context->toEvaluationContext($options->getAttributes());
-
-        if ($evaluationContext !== []) {
-            $payload['context'] = $evaluationContext;
-        }
-
-        $endpoint = $options->isStatic() ? self::STATIC_ENDPOINT : self::ENDPOINT;
+        $endpoint = $static ? self::STATIC_ENDPOINT : self::ENDPOINT;
 
         try {
-            return FetchResponse::fromResponse($this->client->send($endpoint, $payload, $context));
+            return FetchResponse::fromResponse($this->client->send($endpoint, $payload, $headers));
         } catch (ApiException $exception) {
             if ($options->hasFallback()) {
                 return new FetchResponse($options->getFallback());

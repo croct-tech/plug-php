@@ -14,18 +14,36 @@ final class HttpEvaluator implements Evaluator
 {
     private const ENDPOINT = 'external/web/evaluate';
 
+    private const MAX_QUERY_LENGTH = 500;
+
     private ApiClient $client;
 
     private RequestContext $context;
 
-    public function __construct(ApiClient $client, RequestContext $context)
+    private ?IdentityStore $identity;
+
+    public function __construct(ApiClient $client, RequestContext $context, ?IdentityStore $identity = null)
     {
         $this->client = $client;
         $this->context = $context;
+        $this->identity = $identity;
     }
 
     public function evaluate(string $query, ?EvaluationOptions $options = null): mixed
     {
+        // Reject oversized queries before reaching the API, and never mask the misuse with a fallback.
+        $length = \mb_strlen($query, 'UTF-8');
+
+        if ($length > self::MAX_QUERY_LENGTH) {
+            throw new EvaluationException(
+                \sprintf(
+                    'The query must be at most %d characters long, but it is %d characters long.',
+                    self::MAX_QUERY_LENGTH,
+                    $length,
+                ),
+            );
+        }
+
         $options ??= EvaluationOptions::empty();
         $context = $this->context;
 
@@ -37,8 +55,15 @@ final class HttpEvaluator implements Evaluator
             $payload['context'] = $evaluationContext;
         }
 
+        $headers = [
+            HttpHeader::CLIENT_ID->value => $this->identity?->getClientId()?->toString(),
+            HttpHeader::TOKEN->value => $this->identity?->getUserToken()?->toString(),
+            HttpHeader::CLIENT_IP->value => $context->getClientIp(),
+            HttpHeader::CLIENT_AGENT->value => $context->getClientAgent(),
+        ];
+
         try {
-            return $this->client->send(self::ENDPOINT, $payload, $context);
+            return $this->client->send(self::ENDPOINT, $payload, $headers);
         } catch (ApiException $exception) {
             if ($options->hasFallback()) {
                 return $options->getFallback();
