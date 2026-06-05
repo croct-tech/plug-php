@@ -213,8 +213,6 @@ final class Croct implements Plug
     {
         return [
             'appId' => $this->appId,
-            'clientId' => $this->getClientId(),
-            'token' => $this->getUserToken(),
             'disableCidMirroring' => true,
             'cookie' => $this->cookieConfiguration->toBrowserCookies(),
         ];

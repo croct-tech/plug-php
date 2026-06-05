@@ -29,9 +29,6 @@ interface Plug
     /**
      * Returns the options for bootstrapping the client-side SDK.
      *
-     * The result is JSON-encodable and carries the resolved identity together with the cookie
-     * settings, so the client SDK reads and writes the same cookies as the server.
-     *
      * @return array<string, mixed>
      */
     public function getPlugOptions(): array;

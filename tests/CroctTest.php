@@ -110,8 +110,6 @@ final class CroctTest extends TestCase
         self::assertSame(
             [
                 'appId' => self::APP_ID,
-                'clientId' => self::CLIENT_ID,
-                'token' => $croct->getUserToken(),
                 'disableCidMirroring' => true,
                 'cookie' => [
                     'clientId' => [

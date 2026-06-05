@@ -29,19 +29,17 @@ final class VaryingResponseObserverTest extends TestCase
 
         self::assertSame('cid', $plug->getClientId());
         self::assertSame('tok', $plug->getUserToken());
-        self::assertSame(['appId' => 'app'], $plug->getPlugOptions());
         self::assertTrue($plug->evaluate('user is returning'));
         self::assertSame(['title' => 'Hello'], $plug->fetchContent('home-hero')->getContent());
 
         $plug->identify('user-1');
         $plug->anonymize();
 
-        self::assertSame(7, $calls);
+        self::assertSame(6, $calls);
         self::assertSame(
             [
                 'getClientId',
                 'getUserToken',
-                'getPlugOptions',
                 'evaluate',
                 'fetchContent',
                 'identify',
@@ -51,8 +49,8 @@ final class VaryingResponseObserverTest extends TestCase
         );
     }
 
-    #[TestDox('Does not run the callback for the application ID.')]
-    public function testDoesNotVaryOnApplicationId(): void
+    #[TestDox('Does not run the callback for visitor-independent reads.')]
+    public function testDoesNotVaryOnStaticReads(): void
     {
         $inner = $this->createPlug();
 
@@ -62,8 +60,10 @@ final class VaryingResponseObserverTest extends TestCase
         });
 
         self::assertSame('app', $plug->getAppId());
+        self::assertSame(['appId' => 'app'], $plug->getPlugOptions());
+
         self::assertSame(0, $calls);
-        self::assertSame(['getAppId'], $inner->calls);
+        self::assertSame(['getAppId', 'getPlugOptions'], $inner->calls);
     }
 
     #[TestDox('Does not run the callback for a static content fetch.')]
