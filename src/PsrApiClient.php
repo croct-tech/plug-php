@@ -72,7 +72,7 @@ final class PsrApiClient implements ApiClient
 
         $request = $this->requestFactory->createRequest('POST', $url)
             ->withHeader('Content-Type', 'application/json')
-            // Responses are per-visitor; never let a shared HTTP cache store them.
+            // Responses are per-visitor. Never let a shared HTTP cache store them.
             ->withHeader('Cache-Control', 'no-store')
             ->withHeader(HttpHeader::CLIENT_LIBRARY->value, $this->clientLibrary)
             ->withHeader(HttpHeader::API_KEY->value, $this->apiKey->getIdentifier())

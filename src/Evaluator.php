@@ -14,7 +14,7 @@ interface Evaluator
     /**
      * Evaluates a CQL query and returns its result.
      *
-     * Returns the configured fallback if the evaluation fails; otherwise it throws.
+     * Returns the configured fallback if the evaluation fails, otherwise it throws.
      *
      * @throws EvaluationException If the query is invalid or the request fails without a fallback.
      */

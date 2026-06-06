@@ -11,6 +11,7 @@ parameters:
             - LogicException
             - ArithmeticError
             - Random\RandomException
+            - JsonException
         check:
             missingCheckedExceptionInThrows: true
             tooWideThrowType: true

@@ -7,10 +7,9 @@ namespace Croct\Plug;
 /**
  * Decorates another plug instance to detect when the response is varying by visitor.
  *
- * It runs a callback whenever visitor-specific data is read or changed. Operations that return the
- * same result for every visitor — reading the application ID or the plug options, and static content
- * fetches — do not run it. It is useful for integrations that need to keep the response out of shared
- * caches.
+ * It runs a callback whenever visitor-specific data is read or changed. Reading the application ID
+ * or the plug options and fetching static content return the same result for every visitor, so they
+ * do not run it. It is useful for integrations that need to keep the response out of shared caches.
  */
 final class VaryingResponseObserver implements Plug
 {

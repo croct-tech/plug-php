@@ -14,7 +14,7 @@ interface ContentFetcher
     /**
      * Fetches the content of a slot.
      *
-     * Returns the configured fallback if the fetch fails; otherwise it throws.
+     * Returns the configured fallback if the fetch fails, otherwise it throws.
      *
      * @throws ContentException If the request fails without a fallback.
      */

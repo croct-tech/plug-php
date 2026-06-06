@@ -18,7 +18,7 @@ interface ApiClient
      * Sends a request to the given API path and returns the decoded response.
      *
      * @param array<string, mixed>       $payload The request body.
-     * @param array<string, string|null> $headers Request-specific headers; null values are skipped.
+     * @param array<string, string|null> $headers Request-specific headers. Null values are skipped.
      *
      * @throws ApiException If the request fails or the API returns an error.
      */

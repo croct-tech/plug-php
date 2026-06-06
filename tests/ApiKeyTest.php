@@ -169,16 +169,16 @@ final class ApiKeyTest extends TestCase
         $first = $apiKey->sign('header.payload');
         $second = $apiKey->sign('header.payload');
 
-        foreach ([$first, $second] as $signature) {
-            self::assertSame(
-                1,
-                \openssl_verify(
-                    'header.payload',
-                    EcKeyFactory::rawToDer($signature),
-                    $publicKey,
-                    \OPENSSL_ALGO_SHA256,
-                ),
-            );
-        }
+        $verifications = \array_map(
+            static fn (string $signature): int|false => \openssl_verify(
+                'header.payload',
+                EcKeyFactory::rawToDer($signature),
+                $publicKey,
+                \OPENSSL_ALGO_SHA256,
+            ),
+            [$first, $second],
+        );
+
+        self::assertSame([1, 1], $verifications);
     }
 }
