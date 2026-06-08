@@ -14,7 +14,7 @@ use Psr\Http\Message\ServerRequestInterface as ServerRequest;
  */
 final class RequestContext
 {
-    private const PREVIEW_QUERY_PARAMETER = 'croct-preview';
+    public const PREVIEW_QUERY_PARAMETER = 'croct-preview';
 
     private const PREVIEW_EXIT = 'exit';
 
@@ -194,9 +194,13 @@ final class RequestContext
     }
 
     /**
-     * Resolves the preview token from the request, treating the preview-exit sentinel as no preview.
+     * Resolves the preview token from a raw request value.
+     *
+     * @param string|null $token The raw `croct-preview` value, or null if absent.
+     *
+     * @return string|null The preview token, or null if not previewing.
      */
-    private static function resolvePreviewToken(?string $token): ?string
+    public static function resolvePreviewToken(?string $token): ?string
     {
         return $token === null || $token === self::PREVIEW_EXIT ? null : $token;
     }

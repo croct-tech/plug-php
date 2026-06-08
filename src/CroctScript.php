@@ -12,6 +12,11 @@ namespace Croct\Plug;
  */
 final class CroctScript implements \Stringable
 {
+    /**
+     * The default URL of the client-side SDK loader.
+     */
+    public const DEFAULT_SCRIPT_URL = 'https://cdn.croct.io/js/v1/lib/plug.js';
+
     private string $scriptSrc;
 
     /** @var array<string, mixed> */
@@ -37,7 +42,7 @@ final class CroctScript implements \Stringable
 
         $options = \json_encode(
             $this->options,
-            JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP,
+            \JSON_THROW_ON_ERROR | \JSON_UNESCAPED_SLASHES | \JSON_HEX_TAG | \JSON_HEX_AMP,
         );
 
         return \sprintf(

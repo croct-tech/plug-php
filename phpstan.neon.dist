@@ -12,6 +12,8 @@ parameters:
             - ArithmeticError
             - Random\RandomException
             - JsonException
+            - Psr\Http\Client\ClientExceptionInterface
+            - Psr\SimpleCache\InvalidArgumentException
         check:
             missingCheckedExceptionInThrows: true
             tooWideThrowType: true

@@ -146,6 +146,14 @@ final class RequestContextTest extends TestCase
         self::assertSame('preview-jwt', RequestContext::fromServerRequest($request)->getPreviewToken());
     }
 
+    #[TestDox('Resolves a raw preview value, treating the exit sentinel and an absent value as no preview.')]
+    public function testResolvesPreviewToken(): void
+    {
+        self::assertSame('preview-jwt', RequestContext::resolvePreviewToken('preview-jwt'));
+        self::assertNull(RequestContext::resolvePreviewToken('exit'));
+        self::assertNull(RequestContext::resolvePreviewToken(null));
+    }
+
     /**
      * @param array<string, string>      $server
      * @param callable(): RequestContext $callback
