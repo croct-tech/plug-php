@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Croct\Plug\Tests;
 
 use Croct\Plug\ApiKey;
+use Croct\Plug\IdentityResolver;
 use Croct\Plug\InMemoryIdentityStore;
 use Croct\Plug\Session;
 use Croct\Plug\Token;
@@ -72,24 +73,62 @@ final class SessionTest extends TestCase
         self::assertSame($token->toString(), $session->getUserToken()->toString());
     }
 
-    #[TestDox('Carries the subject over when refreshing an expired token.')]
-    public function testCarriesOverSubjectFromExpiredToken(): void
+    #[TestDox('Anonymizes an expired token when no user is resolved.')]
+    public function testAnonymizesExpiredTokenWithoutResolver(): void
     {
         $expired = Token::issue(appId: self::APP_ID, subject: 'user-9', now: 100)->withDuration(86400, 100);
 
         $session = $this->createSession(null, $expired, now: 200000);
 
-        self::assertSame('user-9', $session->getUserToken()->getSubject());
+        self::assertTrue($session->getUserToken()->isAnonymous());
         self::assertTrue($session->getUserToken()->isValidNow(200000));
     }
 
-    #[TestDox('Upgrades an unsigned token to a signed one.')]
+    #[TestDox('Identifies the visitor from the resolver when no token is stored.')]
+    public function testIdentifiesFromResolverWithoutToken(): void
+    {
+        $session = $this->createSession(null, null, identity: $this->resolver('alice'));
+
+        self::assertSame('alice', $session->getUserToken()->getSubject());
+    }
+
+    #[TestDox('Re-identifies the visitor when the resolved user changes on login.')]
+    public function testReconcilesSubjectOnLogin(): void
+    {
+        $anonymous = Token::issue(appId: self::APP_ID, now: 1000)->withDuration(86400, 1000);
+
+        $session = $this->createSession(null, $anonymous, identity: $this->resolver('alice'));
+
+        self::assertSame('alice', $session->getUserToken()->getSubject());
+    }
+
+    #[TestDox('Anonymizes the visitor when the user logs out.')]
+    public function testReconcilesSubjectOnLogout(): void
+    {
+        $identified = Token::issue(appId: self::APP_ID, subject: 'alice', now: 1000)->withDuration(86400, 1000);
+
+        $session = $this->createSession(null, $identified, identity: $this->resolver(null));
+
+        self::assertTrue($session->getUserToken()->isAnonymous());
+    }
+
+    #[TestDox('Keeps the token when the resolved user already matches.')]
+    public function testKeepsTokenWhenResolverMatches(): void
+    {
+        $identified = Token::issue(appId: self::APP_ID, subject: 'alice', now: 1000)->withDuration(86400, 1000);
+
+        $session = $this->createSession(null, $identified, identity: $this->resolver('alice'));
+
+        self::assertSame($identified->toString(), $session->getUserToken()->toString());
+    }
+
+    #[TestDox('Signs an unsigned token, keeping the resolved user.')]
     public function testUpgradesUnsignedTokenToSigned(): void
     {
         [$apiKey] = EcKeyFactory::create();
         $unsigned = Token::issue(appId: self::APP_ID, subject: 'user-3', now: 1000)->withDuration(86400, 1000);
 
-        $session = $this->createSession(null, $unsigned, $apiKey);
+        $session = $this->createSession(null, $unsigned, $apiKey, identity: $this->resolver('user-3'));
 
         self::assertTrue($session->getUserToken()->isSigned());
         self::assertSame('user-3', $session->getUserToken()->getSubject());
@@ -160,17 +199,12 @@ final class SessionTest extends TestCase
         self::assertSame('22222222-2222-4222-8222-222222222222', $token->getTokenId());
     }
 
-    #[TestDox('Treats an empty subject as anonymous when reissuing.')]
+    #[TestDox('Treats an empty resolved user ID as anonymous.')]
     public function testTreatsEmptySubjectAsAnonymous(): void
     {
         [$sessionKey] = EcKeyFactory::create();
 
-        $unsigned = Token::of(
-            ['typ' => 'JWT', 'alg' => 'none', 'appId' => self::APP_ID],
-            ['iss' => 'croct.io', 'aud' => 'croct.io', 'iat' => 1000, 'exp' => 87400, 'sub' => ''],
-        );
-
-        $token = $this->createSession(null, $unsigned, $sessionKey)->getUserToken();
+        $token = $this->createSession(null, null, $sessionKey, identity: $this->resolver(''))->getUserToken();
 
         self::assertTrue($token->isSigned());
         self::assertTrue($token->isAnonymous());
@@ -181,6 +215,7 @@ final class SessionTest extends TestCase
         ?Token $userToken = null,
         ?ApiKey $apiKey = null,
         int $now = 1000,
+        ?IdentityResolver $identity = null,
     ): Session {
         return new Session(
             appId: self::APP_ID,
@@ -189,6 +224,15 @@ final class SessionTest extends TestCase
             tokenDuration: 86400,
             signTokens: null,
             now: $now,
+            identity: $identity,
         );
+    }
+
+    private function resolver(?string $userId): IdentityResolver
+    {
+        $identity = $this->createMock(IdentityResolver::class);
+        $identity->method('getUserId')->willReturn($userId);
+
+        return $identity;
     }
 }

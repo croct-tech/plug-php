@@ -70,6 +70,7 @@ final class Croct implements Plug
         #[\SensitiveParameter]
         ApiKey|string $apiKey,
         IdentityStore $storage,
+        ?IdentityResolver $identity = null,
         ?string $baseEndpointUrl = null,
         int $tokenDuration = self::DEFAULT_TOKEN_DURATION,
         ?ContentProvider $contentProvider = null,
@@ -83,7 +84,7 @@ final class Croct implements Plug
         $context ??= RequestContext::fromGlobals();
         $baseEndpointUrl ??= self::DEFAULT_BASE_ENDPOINT_URL;
 
-        $session = new Session($appId, $key, $storage, $tokenDuration);
+        $session = new Session($appId, $key, $storage, $tokenDuration, identity: $identity);
 
         try {
             $httpClient ??= Psr18ClientDiscovery::find();

@@ -21,6 +21,8 @@ final class Session implements IdentityStore
 
     private bool $signTokens;
 
+    private ?IdentityResolver $identity;
+
     public function __construct(
         string $appId,
         ApiKey $apiKey,
@@ -28,6 +30,7 @@ final class Session implements IdentityStore
         int $tokenDuration = 86400,
         ?bool $signTokens = null,
         ?int $now = null,
+        ?IdentityResolver $identity = null,
     ) {
         $this->appId = $appId;
         $this->apiKey = $apiKey;
@@ -35,6 +38,7 @@ final class Session implements IdentityStore
         $this->tokenDuration = $tokenDuration;
         $this->now = $now;
         $this->signTokens = $signTokens ?? $apiKey->hasPrivateKey();
+        $this->identity = $identity;
     }
 
     /**
@@ -61,7 +65,7 @@ final class Session implements IdentityStore
     public function getUserToken(): Token
     {
         $stored = $this->store->getUserToken();
-        $token = $this->reissue($stored);
+        $token = $this->resolveToken($stored);
 
         if ($stored === null || !$token->equals($stored)) {
             $this->saveUserToken($token);
@@ -103,37 +107,33 @@ final class Session implements IdentityStore
     }
 
     /**
-     * Reissues the user token when the stored one is absent or no longer usable.
+     * Resolves the token to use, reissuing the stored one when it is absent or no longer usable.
      */
-    private function reissue(?Token $token): Token
+    private function resolveToken(?Token $token): Token
     {
-        if ($token === null) {
-            return $this->issueToken();
+        $userId = $this->identity?->getUserId();
+        $hasResolver = $this->identity !== null;
+
+        // Re-issue for the authenticated user when the token is missing, no longer usable, or its
+        // subject no longer matches.
+        if ($token === null
+            || ($this->signTokens && !$token->isSigned())
+            || !$token->isValidNow($this->now)
+            || ($hasResolver && ($userId === null ? !$token->isAnonymous() : !$token->isSubject($userId)))
+        ) {
+            return $this->issueToken($userId);
         }
 
-        // The token belongs to another application: start fresh and anonymous, never carrying its
-        // subject over, regardless of the token's expiration or signature state.
+        // The token belongs to another application: start fresh.
         $tokenAppId = $token->getApplicationId();
 
         if ($tokenAppId !== null && $tokenAppId !== $this->appId) {
-            return $this->issueToken();
-        }
-
-        $subject = $token->getSubject();
-
-        // Upgrade an unsigned token to a signed one when signing is enabled.
-        if ($this->signTokens && !$token->isSigned()) {
-            return $this->issueToken($subject);
-        }
-
-        // Refresh an expired (or not-yet-valid) token, preserving the subject.
-        if (!$token->isValidNow($this->now)) {
-            return $this->issueToken($subject);
+            return $this->issueToken($userId);
         }
 
         // Signed with a different key: re-sign, preserving the subject and token ID.
         if ($token->isSigned() && !$token->matchesKeyId($this->apiKey)) {
-            return $this->issueToken($subject, $token->getTokenId());
+            return $this->issueToken($token->getSubject(), $token->getTokenId());
         }
 
         return $token;
