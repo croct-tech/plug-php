@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Croct\Plug;
 
+use Psr\Http\Client\ClientExceptionInterface as ClientException;
 use Psr\Http\Client\ClientInterface as HttpClient;
 use Psr\Http\Message\RequestFactoryInterface as RequestFactory;
 use Psr\SimpleCache\CacheInterface as Cache;
@@ -75,6 +76,8 @@ final class CroctScriptProvider
 
     /**
      * @param array<string, string> $requestHeaders The visitor request headers, keyed by lower-case name.
+     *
+     * @throws ClientException If the upstream request fails.
      */
     public function load(array $requestHeaders): CroctScriptResponse
     {
