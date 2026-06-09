@@ -131,9 +131,15 @@ final class Session implements IdentityStore
             return $this->issueToken($userId);
         }
 
-        // Signed with a different key: re-sign, preserving the subject and token ID.
+        // Signed with a different key: re-sign, preserving the subject and token ID. The token ID
+        // comes from untrusted input, so a fresh one is generated when it is not a valid UUID.
         if ($token->isSigned() && !$token->matchesKeyId($this->apiKey)) {
-            return $this->issueToken($token->getSubject(), $token->getTokenId());
+            $tokenId = $token->getTokenId();
+
+            return $this->issueToken(
+                $token->getSubject(),
+                $tokenId !== null && Uuid::isValid($tokenId) ? $tokenId : null,
+            );
         }
 
         return $token;

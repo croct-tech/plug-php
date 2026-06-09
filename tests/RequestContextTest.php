@@ -170,9 +170,17 @@ final class RequestContextTest extends TestCase
      */
     private static function withGlobals(array $server, array $query, callable $callback): RequestContext
     {
+        $originalServer = $_SERVER;
+        $originalQuery = $_GET;
+
         $_SERVER = $server;
         $_GET = $query;
 
-        return $callback();
+        try {
+            return $callback();
+        } finally {
+            $_SERVER = $originalServer;
+            $_GET = $originalQuery;
+        }
     }
 }

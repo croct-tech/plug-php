@@ -199,6 +199,38 @@ final class SessionTest extends TestCase
         self::assertSame('22222222-2222-4222-8222-222222222222', $token->getTokenId());
     }
 
+    #[TestDox('Generates a fresh token ID when re-signing a token whose ID is not a valid UUID.')]
+    public function testReSignsTokenWithInvalidTokenId(): void
+    {
+        [$sessionKey] = EcKeyFactory::create();
+        [$otherKey] = EcKeyFactory::create('11111111-1111-4111-8111-111111111111');
+
+        // A tampered cookie can carry a non-UUID "jti", which Token::parse() does not reject.
+        $foreign = Token::of(
+            ['typ' => 'JWT', 'alg' => 'none', 'appId' => self::APP_ID],
+            [
+                'iss' => 'croct.io',
+                'aud' => 'croct.io',
+                'iat' => 1000,
+                'exp' => 1000 + 86400,
+                'sub' => 'user-1',
+                'jti' => 'not-a-uuid',
+            ],
+        )->signedWith($otherKey);
+
+        $token = $this->createSession(null, $foreign, $sessionKey)->getUserToken();
+
+        self::assertTrue($token->isSigned());
+        self::assertTrue($token->matchesKeyId($sessionKey));
+        self::assertSame('user-1', $token->getSubject());
+
+        $tokenId = $token->getTokenId();
+
+        self::assertNotNull($tokenId);
+        self::assertNotSame('not-a-uuid', $tokenId);
+        self::assertTrue(Uuid::isValid($tokenId));
+    }
+
     #[TestDox('Treats an empty resolved user ID as anonymous.')]
     public function testTreatsEmptySubjectAsAnonymous(): void
     {

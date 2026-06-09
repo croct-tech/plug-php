@@ -158,11 +158,16 @@ final class CookieStorageTest extends TestCase
     #[TestDox('Reads the cookies from the request superglobals.')]
     public function testReadsFromGlobals(): void
     {
+        $originalCookie = $_COOKIE;
         $_COOKIE = ['ct.client_id' => self::CLIENT_ID];
 
-        $storage = CookieStorage::fromGlobals();
+        try {
+            $storage = CookieStorage::fromGlobals();
 
-        self::assertSame(self::CLIENT_ID, $storage->getClientId()?->toString());
+            self::assertSame(self::CLIENT_ID, $storage->getClientId()?->toString());
+        } finally {
+            $_COOKIE = $originalCookie;
+        }
     }
 
     #[TestDox('Reads the cookies from a server request.')]
