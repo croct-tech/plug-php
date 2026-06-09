@@ -1,0 +1,5 @@
+services:
+    -
+        class: Croct\Plug\PhpStan\ContentStubFilesExtension
+        tags:
+            - phpstan.stubFilesExtension
