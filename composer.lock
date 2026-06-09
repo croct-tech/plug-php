@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4e21de2ed1853d5654a683e1b68d30c6",
+    "content-hash": "6b33b6c1609b77e9c55f8a0eb3914e44",
     "packages": [
         {
             "name": "php-http/discovery",
@@ -5036,7 +5036,9 @@
     "prefer-lowest": false,
     "platform": {
         "php": "^8.2",
+        "ext-hash": "*",
         "ext-json": "*",
+        "ext-mbstring": "*",
         "ext-openssl": "*",
         "composer-runtime-api": "^2.0"
     },

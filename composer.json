@@ -23,7 +23,9 @@
   },
   "require": {
     "php": "^8.2",
+    "ext-hash": "*",
     "ext-json": "*",
+    "ext-mbstring": "*",
     "ext-openssl": "*",
     "composer-runtime-api": "^2.0",
     "php-http/discovery": "^1.19",
