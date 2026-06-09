@@ -19,15 +19,25 @@ final class ContentStubPlugin implements PluginEntryPoint
 {
     private const STUB_PATH = '.croct' . \DIRECTORY_SEPARATOR . 'types.php';
 
+    private ?string $baseDirectory;
+
+    public function __construct(?string $baseDirectory = null)
+    {
+        if ($baseDirectory === null) {
+            $directory = \getcwd();
+            $baseDirectory = $directory === false ? null : $directory;
+        }
+
+        $this->baseDirectory = $baseDirectory;
+    }
+
     public function __invoke(PluginRegistration $registration, ?SimpleXMLElement $config = null): void
     {
-        $directory = \getcwd();
-
-        if ($directory === false) {
+        if ($this->baseDirectory === null) {
             return;
         }
 
-        $path = $directory . \DIRECTORY_SEPARATOR . self::STUB_PATH;
+        $path = $this->baseDirectory . \DIRECTORY_SEPARATOR . self::STUB_PATH;
 
         if (\is_file($path)) {
             $registration->addStubFile($path);

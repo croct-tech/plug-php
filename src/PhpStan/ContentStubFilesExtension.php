@@ -17,18 +17,19 @@ final class ContentStubFilesExtension implements StubFilesExtension
 {
     private const STUB_PATH = '.croct' . \DIRECTORY_SEPARATOR . 'types.php';
 
+    private string $workingDirectory;
+
+    public function __construct(string $workingDirectory)
+    {
+        $this->workingDirectory = $workingDirectory;
+    }
+
     /**
      * @return list<string>
      */
     public function getFiles(): array
     {
-        $directory = \getcwd();
-
-        if ($directory === false) {
-            return [];
-        }
-
-        $path = $directory . \DIRECTORY_SEPARATOR . self::STUB_PATH;
+        $path = $this->workingDirectory . \DIRECTORY_SEPARATOR . self::STUB_PATH;
 
         return \is_file($path) ? [$path] : [];
     }
