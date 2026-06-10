@@ -25,7 +25,10 @@ final class EvaluationOptionsTest extends TestCase
     #[TestDox('Carry a fallback distinct from an unset one, even when null.')]
     public function testCarriesFallback(): void
     {
-        $options = EvaluationOptions::empty()->withFallback(null);
+        /** @var mixed $fallback */
+        $fallback = null;
+
+        $options = EvaluationOptions::empty()->withFallback($fallback);
 
         self::assertTrue($options->hasFallback());
         self::assertNull($options->getFallback());

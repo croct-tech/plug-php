@@ -160,6 +160,8 @@ final class Croct implements Plug
     /**
      * Evaluates a CQL query against the visitor's context.
      *
+     * @param EvaluationOptions<mixed>|null $options
+     *
      * @throws CroctException If the query is invalid or the request fails without a fallback.
      */
     public function evaluate(string $query, ?EvaluationOptions $options = null): mixed
@@ -169,6 +171,12 @@ final class Croct implements Plug
 
     /**
      * Fetches the personalized content of a slot.
+     *
+     * @template F = never
+     *
+     * @param FetchOptions<F>|null $options
+     *
+     * @return FetchResponse<array<string, mixed>, F>
      *
      * @throws CroctException If the request fails without a fallback.
      */

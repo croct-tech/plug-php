@@ -54,6 +54,9 @@ final class VaryingResponseObserver implements Plug
         return $this->plug->getPlugOptions();
     }
 
+    /**
+     * @param EvaluationOptions<mixed>|null $options
+     */
     public function evaluate(string $query, ?EvaluationOptions $options = null): mixed
     {
         ($this->notify)();
@@ -61,6 +64,13 @@ final class VaryingResponseObserver implements Plug
         return $this->plug->evaluate($query, $options);
     }
 
+    /**
+     * @template F = never
+     *
+     * @param FetchOptions<F>|null $options
+     *
+     * @return FetchResponse<array<string, mixed>, F>
+     */
     public function fetchContent(string $slotId, ?FetchOptions $options = null): FetchResponse
     {
         if (!($options?->isStatic() ?? false)) {

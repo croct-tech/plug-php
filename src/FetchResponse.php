@@ -8,13 +8,20 @@ use Croct\Plug\Content\SlotMetadata;
 
 /**
  * Result of fetching the content of a slot.
+ *
+ * @template-covariant TContent The content type returned on success.
+ * @template-covariant TFallback The fallback type returned when the fetch fails.
  */
 final class FetchResponse
 {
+    /** @var TContent|TFallback */
     private mixed $content;
 
     private ?SlotMetadata $metadata;
 
+    /**
+     * @param TContent|TFallback $content
+     */
     public function __construct(mixed $content, ?SlotMetadata $metadata = null)
     {
         $this->content = $content;
@@ -22,7 +29,9 @@ final class FetchResponse
     }
 
     /**
-     * Gets the slot content.
+     * Gets the slot content, or the fallback when the fetch failed.
+     *
+     * @return TContent|TFallback
      */
     public function getContent(): mixed
     {
@@ -41,6 +50,8 @@ final class FetchResponse
 
     /**
      * Creates a response from the decoded API payload.
+     *
+     * @return self<array<string, mixed>, never>
      */
     public static function fromResponse(mixed $data): self
     {
@@ -57,6 +68,9 @@ final class FetchResponse
             }
         }
 
-        return new self($content, $metadata);
+        /** @var self<array<string, mixed>, never> $response */
+        $response = new self($content, $metadata);
+
+        return $response;
     }
 }

@@ -16,6 +16,8 @@ interface Evaluator
      *
      * Returns the configured fallback if the evaluation fails, otherwise it throws.
      *
+     * @param EvaluationOptions<mixed>|null $options
+     *
      * @throws EvaluationException If the query is invalid or the request fails without a fallback.
      */
     public function evaluate(string $query, ?EvaluationOptions $options = null): mixed;

@@ -29,6 +29,9 @@ final class HttpEvaluator implements Evaluator
         $this->identity = $identity;
     }
 
+    /**
+     * @param EvaluationOptions<mixed>|null $options
+     */
     public function evaluate(string $query, ?EvaluationOptions $options = null): mixed
     {
         // Reject oversized queries before reaching the API, and never mask the misuse with a fallback.
@@ -44,12 +47,11 @@ final class HttpEvaluator implements Evaluator
             );
         }
 
-        $options ??= EvaluationOptions::empty();
         $context = $this->context;
 
         $payload = ['query' => $query];
 
-        $evaluationContext = $context->toEvaluationContext($options->getAttributes());
+        $evaluationContext = $context->toEvaluationContext($options?->getAttributes() ?? []);
 
         if ($evaluationContext !== []) {
             $payload['context'] = $evaluationContext;
@@ -65,7 +67,7 @@ final class HttpEvaluator implements Evaluator
         try {
             return $this->client->send(self::ENDPOINT, $payload, $headers);
         } catch (ApiException $exception) {
-            if ($options->hasFallback()) {
+            if ($options !== null && $options->hasFallback()) {
                 return $options->getFallback();
             }
 

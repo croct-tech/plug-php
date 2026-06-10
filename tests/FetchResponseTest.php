@@ -17,7 +17,10 @@ final class FetchResponseTest extends TestCase
     #[TestDox('Exposes the content and metadata given to the constructor.')]
     public function testExposesContentAndMetadata(): void
     {
-        $response = new FetchResponse(['title' => 'Hello'], new SlotMetadata('1'));
+        /** @var array<string, mixed> $content */
+        $content = ['title' => 'Hello'];
+
+        $response = new FetchResponse($content, new SlotMetadata('1'));
 
         self::assertSame(['title' => 'Hello'], $response->getContent());
         self::assertSame('1', $response->getMetadata()?->getVersion());
@@ -26,7 +29,10 @@ final class FetchResponseTest extends TestCase
     #[TestDox('Defaults to no metadata for a bare content value.')]
     public function testDefaultsToNoMetadata(): void
     {
-        $response = new FetchResponse('fallback');
+        /** @var string $content */
+        $content = 'fallback';
+
+        $response = new FetchResponse($content);
 
         self::assertSame('fallback', $response->getContent());
         self::assertNull($response->getMetadata());

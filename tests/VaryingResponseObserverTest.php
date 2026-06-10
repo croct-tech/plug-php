@@ -125,6 +125,9 @@ final class VaryingResponseObserverTest extends TestCase
                 return ['appId' => 'app'];
             }
 
+            /**
+             * @param EvaluationOptions<mixed>|null $options
+             */
             public function evaluate(string $query, ?EvaluationOptions $options = null): mixed
             {
                 $this->calls[] = 'evaluate';
@@ -132,11 +135,21 @@ final class VaryingResponseObserverTest extends TestCase
                 return true;
             }
 
+            /**
+             * @template F = never
+             *
+             * @param FetchOptions<F>|null $options
+             *
+             * @return FetchResponse<array<string, mixed>, F>
+             */
             public function fetchContent(string $slotId, ?FetchOptions $options = null): FetchResponse
             {
                 $this->calls[] = 'fetchContent';
 
-                return new FetchResponse(['title' => 'Hello']);
+                /** @var FetchResponse<array<string, mixed>, F> $response */
+                $response = new FetchResponse(['title' => 'Hello']);
+
+                return $response;
             }
 
             public function identify(string $userId): void

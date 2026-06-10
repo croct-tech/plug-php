@@ -16,6 +16,12 @@ interface ContentFetcher
      *
      * Returns the configured fallback if the fetch fails, otherwise it throws.
      *
+     * @template F = never
+     *
+     * @param FetchOptions<F>|null $options
+     *
+     * @return FetchResponse<array<string, mixed>, F>
+     *
      * @throws ContentException If the request fails without a fallback.
      */
     public function fetch(string $slotId, ?FetchOptions $options = null): FetchResponse;

@@ -9,18 +9,22 @@ namespace Croct\Plug;
  *
  * Build it through the fluent API, starting from the empty options and deriving copies with the
  * with-methods.
+ *
+ * @template-covariant TFallback The fallback result type, or `mixed` when no fallback is set.
  */
 final class EvaluationOptions
 {
     /** @var array<string, mixed> */
     private array $attributes;
 
+    /** @var TFallback */
     private mixed $fallback;
 
     private bool $fallbackProvided;
 
     /**
      * @param array<string, mixed> $attributes
+     * @param TFallback            $fallback
      */
     private function __construct(array $attributes, mixed $fallback, bool $fallbackProvided)
     {
@@ -31,16 +35,23 @@ final class EvaluationOptions
 
     /**
      * Creates an empty set of options.
+     *
+     * @return self<mixed>
      */
     public static function empty(): self
     {
-        return new self([], null, false);
+        /** @var self<mixed> $options */
+        $options = new self([], null, false);
+
+        return $options;
     }
 
     /**
      * Returns a copy with the given custom attributes, replacing any existing ones.
      *
      * @param array<string, mixed> $attributes
+     *
+     * @return self<TFallback>
      */
     public function withAttributes(array $attributes): self
     {
@@ -49,6 +60,8 @@ final class EvaluationOptions
 
     /**
      * Returns a copy with the given custom attribute added.
+     *
+     * @return self<TFallback>
      */
     public function withAttribute(string $name, mixed $value): self
     {
@@ -62,6 +75,12 @@ final class EvaluationOptions
      * Returns a copy with a fallback result to return if the evaluation fails.
      *
      * Without a fallback, a failed evaluation throws an exception.
+     *
+     * @template T
+     *
+     * @param T $fallback
+     *
+     * @return self<T>
      */
     public function withFallback(mixed $fallback): self
     {
@@ -88,6 +107,8 @@ final class EvaluationOptions
 
     /**
      * Gets the fallback result returned when the evaluation fails.
+     *
+     * @return TFallback
      */
     public function getFallback(): mixed
     {

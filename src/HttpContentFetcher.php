@@ -38,6 +38,13 @@ final class HttpContentFetcher implements ContentFetcher
         $this->contentProvider = $contentProvider ?? new NullContentProvider();
     }
 
+    /**
+     * @template F = never
+     *
+     * @param FetchOptions<F>|null $options
+     *
+     * @return FetchResponse<array<string, mixed>, F>
+     */
     public function fetch(string $slotId, ?FetchOptions $options = null): FetchResponse
     {
         $options ??= FetchOptions::empty();
@@ -92,13 +99,19 @@ final class HttpContentFetcher implements ContentFetcher
             return FetchResponse::fromResponse($this->client->send($endpoint, $payload, $headers));
         } catch (ApiException $exception) {
             if ($options->hasFallback()) {
-                return new FetchResponse($options->getFallback());
+                /** @var FetchResponse<array<string, mixed>, F> $response */
+                $response = new FetchResponse($options->getFallback());
+
+                return $response;
             }
 
             $content = $this->contentProvider->getContent($slotId);
 
             if ($content !== null) {
-                return new FetchResponse($content);
+                /** @var FetchResponse<array<string, mixed>, F> $response */
+                $response = new FetchResponse($content);
+
+                return $response;
             }
 
             throw new ContentException($exception->getMessage(), 0, $exception);

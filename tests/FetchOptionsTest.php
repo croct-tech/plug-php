@@ -51,7 +51,10 @@ final class FetchOptionsTest extends TestCase
     {
         self::assertFalse(FetchOptions::empty()->hasFallback());
 
-        $options = FetchOptions::empty()->withFallback(null);
+        /** @var mixed $fallback */
+        $fallback = null;
+
+        $options = FetchOptions::empty()->withFallback($fallback);
 
         self::assertTrue($options->hasFallback());
         self::assertNull($options->getFallback());

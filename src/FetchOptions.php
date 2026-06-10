@@ -9,6 +9,8 @@ namespace Croct\Plug;
  *
  * Build it through the fluent API, starting from the empty options and deriving copies with the
  * with-methods.
+ *
+ * @template-covariant TFallback The fallback content type, or `never` when no fallback is set.
  */
 final class FetchOptions
 {
@@ -25,10 +27,12 @@ final class FetchOptions
 
     private bool $fallbackProvided;
 
+    /** @var TFallback */
     private mixed $fallback;
 
     /**
      * @param array<string, mixed> $attributes
+     * @param TFallback            $fallback
      */
     private function __construct(
         ?string $preferredLocale,
@@ -50,14 +54,21 @@ final class FetchOptions
 
     /**
      * Creates an empty set of options.
+     *
+     * @return self<never>
      */
     public static function empty(): self
     {
-        return new self(null, null, false, false, [], false, null);
+        /** @var self<never> $options */
+        $options = new self(null, null, false, false, [], false, null);
+
+        return $options;
     }
 
     /**
      * Returns a copy that requests content in the given locale.
+     *
+     * @return self<TFallback>
      */
     public function withPreferredLocale(string $preferredLocale): self
     {
@@ -66,6 +77,8 @@ final class FetchOptions
 
     /**
      * Returns a copy that requests the given content version.
+     *
+     * @return self<TFallback>
      */
     public function withVersion(int|string $version): self
     {
@@ -74,6 +87,8 @@ final class FetchOptions
 
     /**
      * Returns a copy that fetches statically generated content (server-side only).
+     *
+     * @return self<TFallback>
      */
     public function withStatic(bool $static = true): self
     {
@@ -82,6 +97,8 @@ final class FetchOptions
 
     /**
      * Returns a copy that includes the content schema in the response metadata.
+     *
+     * @return self<TFallback>
      */
     public function withSchema(bool $includeSchema = true): self
     {
@@ -92,6 +109,8 @@ final class FetchOptions
      * Returns a copy with the given custom attributes, replacing any existing ones.
      *
      * @param array<string, mixed> $attributes
+     *
+     * @return self<TFallback>
      */
     public function withAttributes(array $attributes): self
     {
@@ -100,6 +119,8 @@ final class FetchOptions
 
     /**
      * Returns a copy with the given custom attribute added.
+     *
+     * @return self<TFallback>
      */
     public function withAttribute(string $name, mixed $value): self
     {
@@ -114,6 +135,12 @@ final class FetchOptions
      *
      * Without a fallback, a failed fetch throws an exception. The fallback may be any value,
      * including null, which is treated as a provided fallback rather than the absence of one.
+     *
+     * @template T
+     *
+     * @param T $content
+     *
+     * @return self<T>
      */
     public function withFallback(mixed $content): self
     {
@@ -184,6 +211,8 @@ final class FetchOptions
 
     /**
      * Gets the fallback content returned when the fetch fails.
+     *
+     * @return TFallback
      */
     public function getFallback(): mixed
     {
@@ -194,6 +223,8 @@ final class FetchOptions
      * Returns a copy with the given fields overridden, keeping the rest.
      *
      * @param array<string, mixed>|null $attributes
+     *
+     * @return self<TFallback>
      */
     private function copy(
         ?string $preferredLocale = null,
