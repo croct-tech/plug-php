@@ -180,4 +180,42 @@ final class CookieStorageTest extends TestCase
 
         self::assertSame(self::CLIENT_ID, $storage->getClientId()?->toString());
     }
+
+    #[TestDox('Reuses the process-wide instance built from the request cookies.')]
+    public function testGlobalReturnsMemoizedInstance(): void
+    {
+        $originalCookie = $_COOKIE;
+        $_COOKIE = ['ct.client_id' => self::CLIENT_ID];
+
+        try {
+            CookieStorage::reset();
+
+            $first = CookieStorage::global();
+
+            self::assertSame($first, CookieStorage::global());
+            self::assertSame(self::CLIENT_ID, $first->getClientId()?->toString());
+        } finally {
+            CookieStorage::reset();
+            $_COOKIE = $originalCookie;
+        }
+    }
+
+    #[TestDox('Rebuilds the process-wide instance after a reset.')]
+    public function testResetClearsTheGlobalInstance(): void
+    {
+        $originalCookie = $_COOKIE;
+        $_COOKIE = [];
+
+        try {
+            CookieStorage::reset();
+
+            $first = CookieStorage::global();
+            CookieStorage::reset();
+
+            self::assertNotSame($first, CookieStorage::global());
+        } finally {
+            CookieStorage::reset();
+            $_COOKIE = $originalCookie;
+        }
+    }
 }

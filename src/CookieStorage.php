@@ -15,6 +15,8 @@ use Psr\Http\Message\ServerRequestInterface as ServerRequest;
  */
 final class CookieStorage implements IdentityStore
 {
+    private static ?self $instance = null;
+
     private ?Uuid $clientId;
 
     private ?Token $userToken;
@@ -44,6 +46,28 @@ final class CookieStorage implements IdentityStore
         $cookies = $_COOKIE;
 
         return self::fromArray($cookies, $configuration, $now);
+    }
+
+    /**
+     * Returns the process-wide instance built from the current request's cookies.
+     *
+     * The instance is created once from the request cookies and reused, so the session can update
+     * it and the cookies emitted afterwards reflect those changes without passing it around.
+     *
+     * In long-running runtimes (e.g. RoadRunner, Swoole), call reset() between requests to avoid
+     * leaking session state across them.
+     */
+    public static function global(): self
+    {
+        return self::$instance ??= self::fromGlobals();
+    }
+
+    /**
+     * Clears the process-wide instance returned by global().
+     */
+    public static function reset(): void
+    {
+        self::$instance = null;
     }
 
     /**

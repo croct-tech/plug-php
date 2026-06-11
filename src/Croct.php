@@ -10,6 +10,7 @@ use Croct\Plug\Content\DefaultContentProvider;
 use Croct\Plug\Content\NullContentProvider;
 use Croct\Plug\Exception\ConfigurationException;
 use Croct\Plug\Exception\CroctException;
+use Dotenv\Dotenv;
 use Http\Discovery\Exception\NotFoundException;
 use Http\Discovery\Psr17FactoryDiscovery;
 use Http\Discovery\Psr18ClientDiscovery;
@@ -131,28 +132,54 @@ final class Croct implements Plug
     /**
      * Creates an instance from the CROCT_* environment variables.
      *
+     * Reads from the process environment ($_ENV, $_SERVER, and getenv()), defaulting to the
+     * process-wide cookie storage when none is given.
+     *
      * @throws ConfigurationException If required variables are missing or no transport is available.
      */
-    public static function fromEnvironment(IdentityStore $storage): self
+    public static function fromEnvironment(?IdentityStore $storage = null): self
     {
-        $appId = self::getEnv('CROCT_APP_ID');
-        $apiKey = self::getEnv('CROCT_API_KEY');
+        return self::build(self::getEnv(...), $storage ?? CookieStorage::global());
+    }
 
-        if ($appId === null || $apiKey === null) {
-            throw new ConfigurationException(
-                'The CROCT_APP_ID and CROCT_API_KEY environment variables are required.',
-            );
+    /**
+     * Creates an instance from the CROCT_* variables in a .env file.
+     *
+     * Reads the .env file in the given directory (defaulting to the current working directory)
+     * without modifying the process environment, falling back to the process environment for any
+     * variable absent from the file. Defaults to the process-wide cookie storage when none is given.
+     *
+     * @throws ConfigurationException If required variables are missing or no transport is available.
+     */
+    public static function fromDotenv(?string $directory = null, ?IdentityStore $storage = null): self
+    {
+        if ($directory === null) {
+            $cwd = \getcwd();
+            $directory = $cwd === false ? '.' : $cwd;
         }
 
-        $tokenDuration = self::getEnv('CROCT_TOKEN_DURATION');
+        $values = Dotenv::createArrayBacked($directory)->safeLoad();
 
-        return self::plug(
-            appId: $appId,
-            apiKey: $apiKey,
-            storage: $storage,
-            baseEndpointUrl: self::getEnv('CROCT_BASE_ENDPOINT_URL') ?? self::DEFAULT_BASE_ENDPOINT_URL,
-            tokenDuration: $tokenDuration !== null ? (int) $tokenDuration : self::DEFAULT_TOKEN_DURATION,
-        );
+        $resolve = static function (string $name) use ($values): ?string {
+            $value = $values[$name] ?? null;
+
+            return \is_string($value) && $value !== '' ? $value : self::getEnv($name);
+        };
+
+        return self::build($resolve, $storage ?? CookieStorage::global());
+    }
+
+    /**
+     * Emits the session cookies of the process-wide cookie storage.
+     *
+     * Convenience for CookieStorage::global()->emit(); must be called before any output is sent.
+     *
+     * @param (callable(string, string, array<string, mixed>): bool)|null $emitter
+     *     The function used to send each cookie. Defaults to PHP's setcookie().
+     */
+    public static function emitCookies(?callable $emitter = null): void
+    {
+        CookieStorage::global()->emit($emitter);
     }
 
     /**
@@ -230,13 +257,47 @@ final class Croct implements Plug
     }
 
     /**
-     * Reads an environment variable.
+     * Builds an instance from a resolver of CROCT_* configuration variables.
+     *
+     * @param callable(string): (string|null) $source Resolves a variable by name, or null if unset.
+     *
+     * @throws ConfigurationException If required variables are missing or no transport is available.
+     */
+    private static function build(callable $source, IdentityStore $storage): self
+    {
+        $appId = $source('CROCT_APP_ID');
+        $apiKey = $source('CROCT_API_KEY');
+
+        if ($appId === null || $apiKey === null) {
+            throw new ConfigurationException(
+                'The CROCT_APP_ID and CROCT_API_KEY variables are required. Set them in the '
+                . 'environment, load them from a .env file with Croct::fromDotenv(), or pass them '
+                . 'directly to Croct::plug().',
+            );
+        }
+
+        $tokenDuration = $source('CROCT_TOKEN_DURATION');
+
+        return self::plug(
+            appId: $appId,
+            apiKey: $apiKey,
+            storage: $storage,
+            baseEndpointUrl: $source('CROCT_BASE_ENDPOINT_URL') ?? self::DEFAULT_BASE_ENDPOINT_URL,
+            tokenDuration: $tokenDuration !== null ? (int) $tokenDuration : self::DEFAULT_TOKEN_DURATION,
+        );
+    }
+
+    /**
+     * Reads a variable from the process environment.
+     *
+     * Checks $_ENV and $_SERVER before getenv() so variables set by the SAPI (e.g. Apache SetEnv
+     * or PHP-FPM env) are seen even when they are not exported to getenv().
      *
      * @return string|null The value, or null when it is unset or empty.
      */
     private static function getEnv(string $name): ?string
     {
-        $value = \getenv($name);
+        $value = $_ENV[$name] ?? $_SERVER[$name] ?? \getenv($name);
 
         return \is_string($value) && $value !== '' ? $value : null;
     }
