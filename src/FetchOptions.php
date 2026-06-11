@@ -7,7 +7,7 @@ namespace Croct\Plug;
 /**
  * Immutable options for fetching the content of a slot.
  *
- * Build it through the fluent API, starting from the empty options and deriving copies with the
+ * Build it through the fluent API, starting from the default options and deriving copies with the
  * with-methods.
  *
  * @template-covariant TFallback The fallback content type, or `never` when no fallback is set.
@@ -15,8 +15,6 @@ namespace Croct\Plug;
 final class FetchOptions
 {
     private ?string $preferredLocale;
-
-    private int|string|null $version;
 
     private bool $static;
 
@@ -36,7 +34,6 @@ final class FetchOptions
      */
     private function __construct(
         ?string $preferredLocale,
-        int|string|null $version,
         bool $static,
         bool $includeSchema,
         array $attributes,
@@ -44,7 +41,6 @@ final class FetchOptions
         mixed $fallback,
     ) {
         $this->preferredLocale = $preferredLocale;
-        $this->version = $version;
         $this->static = $static;
         $this->includeSchema = $includeSchema;
         $this->attributes = $attributes;
@@ -53,14 +49,14 @@ final class FetchOptions
     }
 
     /**
-     * Creates an empty set of options.
+     * Creates the default set of options, with nothing set.
      *
      * @return self<never>
      */
-    public static function empty(): self
+    public static function default(): self
     {
         /** @var self<never> $options */
-        $options = new self(null, null, false, false, [], false, null);
+        $options = new self(null, false, false, [], false, null);
 
         return $options;
     }
@@ -73,16 +69,6 @@ final class FetchOptions
     public function withPreferredLocale(string $preferredLocale): self
     {
         return $this->copy(preferredLocale: $preferredLocale);
-    }
-
-    /**
-     * Returns a copy that requests the given content version.
-     *
-     * @return self<TFallback>
-     */
-    public function withVersion(int|string $version): self
-    {
-        return $this->copy(version: $version);
     }
 
     /**
@@ -146,7 +132,6 @@ final class FetchOptions
     {
         return new self(
             $this->preferredLocale,
-            $this->version,
             $this->static,
             $this->includeSchema,
             $this->attributes,
@@ -163,16 +148,6 @@ final class FetchOptions
     public function getPreferredLocale(): ?string
     {
         return $this->preferredLocale;
-    }
-
-    /**
-     * Gets the requested content version.
-     *
-     * @return int|string|null The version, or null for the latest.
-     */
-    public function getVersion(): int|string|null
-    {
-        return $this->version;
     }
 
     /**
@@ -228,14 +203,12 @@ final class FetchOptions
      */
     private function copy(
         ?string $preferredLocale = null,
-        int|string|null $version = null,
         ?bool $static = null,
         ?bool $includeSchema = null,
         ?array $attributes = null,
     ): self {
         return new self(
             $preferredLocale ?? $this->preferredLocale,
-            $version ?? $this->version,
             $static ?? $this->static,
             $includeSchema ?? $this->includeSchema,
             $attributes ?? $this->attributes,

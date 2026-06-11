@@ -8,6 +8,7 @@ use Croct\Plug\ApiKey;
 use Croct\Plug\Content\ArrayContentProvider;
 use Croct\Plug\Content\ContentProvider;
 use Croct\Plug\Content\ContentSource;
+use Croct\Plug\Content\DefaultContentProvider;
 use Croct\Plug\Exception\ContentException;
 use Croct\Plug\FetchOptions;
 use Croct\Plug\HttpContentFetcher;
@@ -59,8 +60,8 @@ final class HttpContentFetcherTest extends TestCase
         $fetcher = $this->createFetcher($mock, $factory, new RequestContext(url: 'https://example.com/'));
 
         $response = $fetcher->fetch(
-            'home-hero',
-            FetchOptions::empty()->withPreferredLocale('en-us')->withVersion(2),
+            'home-hero@2',
+            FetchOptions::default()->withPreferredLocale('en-us'),
         );
 
         self::assertSame(['title' => 'Hello'], $response->getContent());
@@ -108,7 +109,7 @@ final class HttpContentFetcherTest extends TestCase
 
         $fetcher = $this->createFetcher($mock, $factory);
 
-        $response = $fetcher->fetch('home-hero', FetchOptions::empty()->withSchema());
+        $response = $fetcher->fetch('home-hero', FetchOptions::default()->withSchema());
 
         self::assertSame(['type' => 'structure'], $response->getMetadata()?->getSchema());
 
@@ -143,7 +144,7 @@ final class HttpContentFetcherTest extends TestCase
         );
 
         $this->createFetcher($mock, $factory, $context, identity: $identity)
-            ->fetch('home-hero', FetchOptions::empty()->withStatic());
+            ->fetch('home-hero', FetchOptions::default()->withStatic());
 
         $request = $mock->getLastRequest();
 
@@ -210,7 +211,7 @@ final class HttpContentFetcherTest extends TestCase
         $mock->addResponse($factory->createResponse(500));
 
         $response = $this->createFetcher($mock, $factory)
-            ->fetch('home-hero', FetchOptions::empty()->withFallback(['title' => 'Default']));
+            ->fetch('home-hero', FetchOptions::default()->withFallback(['title' => 'Default']));
 
         self::assertSame(['title' => 'Default'], $response->getContent());
     }
@@ -254,9 +255,53 @@ final class HttpContentFetcherTest extends TestCase
         $provider = new ArrayContentProvider(['home-hero' => ['title' => 'Generated']]);
 
         $response = $this->createFetcher($mock, $factory, contentProvider: $provider)
-            ->fetch('home-hero', FetchOptions::empty()->withFallback(['title' => 'Explicit']));
+            ->fetch('home-hero', FetchOptions::default()->withFallback(['title' => 'Explicit']));
 
         self::assertSame(['title' => 'Explicit'], $response->getContent());
+    }
+
+    #[TestDox('Looks up the content provider by the slot ID without its version.')]
+    public function testFallsBackToContentProviderForVersionedSlot(): void
+    {
+        $factory = new Psr17Factory();
+        $mock = new MockClient();
+        $mock->addResponse($factory->createResponse(500));
+
+        $provider = new ArrayContentProvider(['home-hero' => ['title' => 'Generated']]);
+
+        $response = $this->createFetcher($mock, $factory, contentProvider: $provider)->fetch('home-hero@2');
+
+        self::assertSame(['title' => 'Generated'], $response->getContent());
+    }
+
+    #[TestDox('Forwards the preferred locale to the content provider on fallback.')]
+    public function testForwardsPreferredLocaleToContentProvider(): void
+    {
+        $factory = new Psr17Factory();
+        $mock = new MockClient();
+        $mock->addResponse($factory->createResponse(500));
+
+        $provider = new DefaultContentProvider(
+            ['home-hero' => ['en' => ['title' => 'Hello'], 'pt-br' => ['title' => 'Olá']]],
+            'en',
+        );
+
+        $response = $this->createFetcher($mock, $factory, contentProvider: $provider)
+            ->fetch('home-hero@2', FetchOptions::default()->withPreferredLocale('pt-br'));
+
+        self::assertSame(['title' => 'Olá'], $response->getContent());
+    }
+
+    #[TestDox('Rejects a malformed slot ID.')]
+    public function testRejectsMalformedSlotId(): void
+    {
+        $factory = new Psr17Factory();
+        $mock = new MockClient();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Malformed slot ID "home hero".');
+
+        $this->createFetcher($mock, $factory)->fetch('home hero');
     }
 
     private function createFetcher(

@@ -16,10 +16,9 @@ final class FetchOptionsTest extends TestCase
     #[TestDox('Default to empty.')]
     public function testEmptyHasNoOptions(): void
     {
-        $options = FetchOptions::empty();
+        $options = FetchOptions::default();
 
         self::assertNull($options->getPreferredLocale());
-        self::assertNull($options->getVersion());
         self::assertFalse($options->isStatic());
         self::assertFalse($options->includesSchema());
         self::assertSame([], $options->getAttributes());
@@ -29,16 +28,14 @@ final class FetchOptionsTest extends TestCase
     #[TestDox('Build up immutably through the fluent API.')]
     public function testBuildsOptionsFluently(): void
     {
-        $options = FetchOptions::empty()
+        $options = FetchOptions::default()
             ->withPreferredLocale('en-us')
-            ->withVersion(2)
             ->withStatic()
             ->withSchema()
             ->withAttribute('plan', 'pro')
             ->withFallback(['headline' => 'Welcome']);
 
         self::assertSame('en-us', $options->getPreferredLocale());
-        self::assertSame(2, $options->getVersion());
         self::assertTrue($options->isStatic());
         self::assertTrue($options->includesSchema());
         self::assertSame(['plan' => 'pro'], $options->getAttributes());
@@ -49,12 +46,12 @@ final class FetchOptionsTest extends TestCase
     #[TestDox('Distinguish a null fallback from no fallback.')]
     public function testDistinguishesNullFallback(): void
     {
-        self::assertFalse(FetchOptions::empty()->hasFallback());
+        self::assertFalse(FetchOptions::default()->hasFallback());
 
         /** @var mixed $fallback */
         $fallback = null;
 
-        $options = FetchOptions::empty()->withFallback($fallback);
+        $options = FetchOptions::default()->withFallback($fallback);
 
         self::assertTrue($options->hasFallback());
         self::assertNull($options->getFallback());
@@ -63,12 +60,11 @@ final class FetchOptionsTest extends TestCase
     #[TestDox('Do not mutate the original instance.')]
     public function testWithMethodsAreImmutable(): void
     {
-        $options = FetchOptions::empty();
+        $options = FetchOptions::default();
 
-        $options->withPreferredLocale('en-us')->withVersion(3)->withStatic()->withSchema();
+        $options->withPreferredLocale('en-us')->withStatic()->withSchema();
 
         self::assertNull($options->getPreferredLocale());
-        self::assertNull($options->getVersion());
         self::assertFalse($options->isStatic());
         self::assertFalse($options->includesSchema());
     }
@@ -76,7 +72,7 @@ final class FetchOptionsTest extends TestCase
     #[TestDox('Replace all attributes when set as a whole.')]
     public function testReplacesAttributes(): void
     {
-        $options = FetchOptions::empty()
+        $options = FetchOptions::default()
             ->withAttribute('a', 1)
             ->withAttributes(['b' => 2]);
 

@@ -57,10 +57,13 @@ interface Plug
      *
      * @template F = never
      *
+     * @param string               $slotId  The slot ID, optionally versioned as `slot-id@version`
+     *                                       (e.g. `home-banner@2`).
      * @param FetchOptions<F>|null $options
      *
      * @return FetchResponse<array<string, mixed>, F>
      *
+     * @throws \InvalidArgumentException If the slot ID is malformed.
      * @throws CroctException If the request fails without a fallback.
      */
     public function fetchContent(string $slotId, ?FetchOptions $options = null): FetchResponse;

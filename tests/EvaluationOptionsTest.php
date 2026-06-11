@@ -16,7 +16,7 @@ final class EvaluationOptionsTest extends TestCase
     #[TestDox('Default to no attributes or a fallback.')]
     public function testEmptyHasNoAttributes(): void
     {
-        $options = EvaluationOptions::empty();
+        $options = EvaluationOptions::default();
 
         self::assertSame([], $options->getAttributes());
         self::assertFalse($options->hasFallback());
@@ -28,7 +28,7 @@ final class EvaluationOptionsTest extends TestCase
         /** @var mixed $fallback */
         $fallback = null;
 
-        $options = EvaluationOptions::empty()->withFallback($fallback);
+        $options = EvaluationOptions::default()->withFallback($fallback);
 
         self::assertTrue($options->hasFallback());
         self::assertNull($options->getFallback());
@@ -37,7 +37,7 @@ final class EvaluationOptionsTest extends TestCase
     #[TestDox('Add attributes one at a time.')]
     public function testAddsAttributes(): void
     {
-        $options = EvaluationOptions::empty()
+        $options = EvaluationOptions::default()
             ->withAttribute('plan', 'pro')
             ->withAttribute('seats', 5);
 
@@ -47,7 +47,7 @@ final class EvaluationOptionsTest extends TestCase
     #[TestDox('Replace all attributes when set as a whole.')]
     public function testReplacesAttributes(): void
     {
-        $options = EvaluationOptions::empty()
+        $options = EvaluationOptions::default()
             ->withAttribute('plan', 'pro')
             ->withAttributes(['seats' => 5]);
 
@@ -57,7 +57,7 @@ final class EvaluationOptionsTest extends TestCase
     #[TestDox('Do not mutate the original instance.')]
     public function testWithMethodsAreImmutable(): void
     {
-        $options = EvaluationOptions::empty();
+        $options = EvaluationOptions::default();
 
         $options->withAttribute('plan', 'pro');
 

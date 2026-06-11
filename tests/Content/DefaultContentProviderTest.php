@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Croct\Plug\Tests\Content;
 
-use Croct\Plug\Content\SlotsContentProvider;
+use Croct\Plug\Content\DefaultContentProvider;
 use Croct\Plug\Tests\Fixtures\VirtualFilesystem;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\TestDox;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(SlotsContentProvider::class)]
-#[TestDox('A slots content provider')]
-final class SlotsContentProviderTest extends TestCase
+#[CoversClass(DefaultContentProvider::class)]
+#[TestDox('A default content provider')]
+final class DefaultContentProviderTest extends TestCase
 {
     protected function setUp(): void
     {
@@ -28,13 +28,13 @@ final class SlotsContentProviderTest extends TestCase
     public function testDefaultsToTheInstalledRootPackage(): void
     {
         // The library's own root has no croct.json, so discovery returns null.
-        self::assertNull(SlotsContentProvider::fromProject());
+        self::assertNull(DefaultContentProvider::fromProject());
     }
 
     #[TestDox('Returns null when the configuration file is missing.')]
     public function testReturnsNullWhenConfigurationIsMissing(): void
     {
-        self::assertNull(SlotsContentProvider::fromProject(VirtualFilesystem::path()));
+        self::assertNull(DefaultContentProvider::fromProject(VirtualFilesystem::path()));
     }
 
     #[TestDox('Returns null when the configuration is not a JSON object.')]
@@ -42,7 +42,7 @@ final class SlotsContentProviderTest extends TestCase
     {
         $this->write('croct.json', '42');
 
-        self::assertNull(SlotsContentProvider::fromProject(VirtualFilesystem::path()));
+        self::assertNull(DefaultContentProvider::fromProject(VirtualFilesystem::path()));
     }
 
     #[TestDox('Returns null when the content file is missing.')]
@@ -50,7 +50,7 @@ final class SlotsContentProviderTest extends TestCase
     {
         $this->write('croct.json', '{}');
 
-        self::assertNull(SlotsContentProvider::fromProject(VirtualFilesystem::path()));
+        self::assertNull(DefaultContentProvider::fromProject(VirtualFilesystem::path()));
     }
 
     #[TestDox('Returns null when the configuration cannot be read.')]
@@ -60,7 +60,7 @@ final class SlotsContentProviderTest extends TestCase
 
         // The file reports as readable but fails to open; the resulting warning
         // is silenced so the failure path can be asserted.
-        $provider = @SlotsContentProvider::fromProject(VirtualFilesystem::path());
+        $provider = @DefaultContentProvider::fromProject(VirtualFilesystem::path());
 
         self::assertNull($provider);
     }
@@ -105,12 +105,19 @@ final class SlotsContentProviderTest extends TestCase
             ],
         ]);
 
-        $provider = SlotsContentProvider::fromProject(VirtualFilesystem::path());
+        $provider = DefaultContentProvider::fromProject(VirtualFilesystem::path());
 
         self::assertNotNull($provider);
+        // Defaults to the project's default locale when no language is requested.
         self::assertSame(['title' => 'Latest'], $provider->getContent('home-hero'));
-        // Falls back to the first available locale when the default is absent.
-        self::assertSame(['label' => 'Comprar'], $provider->getContent('cta'));
+        // Serves the requested language when available.
+        self::assertSame(['title' => 'Recente'], $provider->getContent('home-hero', 'pt'));
+        // Falls back to the default locale when the requested language is absent.
+        self::assertSame(['title' => 'Latest'], $provider->getContent('home-hero', 'fr'));
+        // Serves an explicitly requested language even when the default locale is absent.
+        self::assertSame(['label' => 'Comprar'], $provider->getContent('cta', 'pt'));
+        // Gives up when neither the requested language nor the default locale is available.
+        self::assertNull($provider->getContent('cta'));
         self::assertNull($provider->getContent('missing'));
     }
 
@@ -154,13 +161,16 @@ final class SlotsContentProviderTest extends TestCase
             ],
         ]);
 
-        $provider = SlotsContentProvider::fromProject(VirtualFilesystem::path());
+        $provider = DefaultContentProvider::fromProject(VirtualFilesystem::path());
 
         self::assertNotNull($provider);
         self::assertNull($provider->getContent('not-versions'));
         self::assertNull($provider->getContent('no-valid-latest'));
         self::assertNull($provider->getContent('no-localized-array'));
-        self::assertSame(['k' => 'v2'], $provider->getContent('valid'));
+        // Resolves the latest valid version for the requested language.
+        self::assertSame(['k' => 'v2'], $provider->getContent('valid', 'en'));
+        // Without a default locale, an unspecified language resolves to nothing.
+        self::assertNull($provider->getContent('valid'));
     }
 
     /**

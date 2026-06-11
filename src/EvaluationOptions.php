@@ -7,7 +7,7 @@ namespace Croct\Plug;
 /**
  * Immutable options for evaluating a CQL query.
  *
- * Build it through the fluent API, starting from the empty options and deriving copies with the
+ * Build it through the fluent API, starting from the default options and deriving copies with the
  * with-methods.
  *
  * @template-covariant TFallback The fallback result type, or `mixed` when no fallback is set.
@@ -34,11 +34,11 @@ final class EvaluationOptions
     }
 
     /**
-     * Creates an empty set of options.
+     * Creates the default set of options, with nothing set.
      *
      * @return self<mixed>
      */
-    public static function empty(): self
+    public static function default(): self
     {
         /** @var self<mixed> $options */
         $options = new self([], null, false);

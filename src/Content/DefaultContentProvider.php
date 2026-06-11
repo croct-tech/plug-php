@@ -9,16 +9,30 @@ use Composer\InstalledVersions;
 /**
  * A content provider backed by the `slots.json` file written by the Croct CLI.
  *
- * Reads the project's `croct.json` to locate `slots.json` and determine the
- * default locale, then serves the latest version of each slot's content as a
- * fallback. It requires no code generation: the data files are committed to the
- * project and read at runtime.
+ * Serves the latest version of each slot's content as a fallback, resolving the language at
+ * lookup time the same way as the CLI-generated resolver: the requested language, then the
+ * project's default locale, then nothing.
  */
-final class SlotsContentProvider extends ArrayContentProvider
+final class DefaultContentProvider implements ContentProvider
 {
     private const CONFIG_FILE = 'croct.json';
 
     private const CONTENT_FILE = 'slots.json';
+
+    /** @var array<string, array<string, array<string, mixed>>> */
+    private array $slots;
+
+    private ?string $defaultLocale;
+
+    /**
+     * @param array<string, array<string, array<string, mixed>>> $slots The latest content of each
+     *                                                                   slot, keyed by ID then locale.
+     */
+    public function __construct(array $slots, ?string $defaultLocale = null)
+    {
+        $this->slots = $slots;
+        $this->defaultLocale = $defaultLocale;
+    }
 
     /**
      * Builds a provider from the project's committed content files.
@@ -49,18 +63,36 @@ final class SlotsContentProvider extends ArrayContentProvider
             return null;
         }
 
-        return new self(self::resolve($content, self::getDefaultLocale($configuration)));
+        return new self(self::resolve($content), self::getDefaultLocale($configuration));
     }
 
     /**
-     * Reduces the versioned, localized content to the latest version of each slot
-     * in the given locale, keyed by slot ID.
-     *
+     * @return array<string, mixed>|null
+     */
+    public function getContent(string $id, ?string $language = null): ?array
+    {
+        $localized = $this->slots[$id] ?? null;
+
+        if ($localized === null) {
+            return null;
+        }
+
+        // Mirror the CLI-generated resolver: the requested language, then the default, then nothing.
+        foreach ([$language ?? $this->defaultLocale, $this->defaultLocale] as $candidate) {
+            if ($candidate !== null && isset($localized[$candidate])) {
+                return $localized[$candidate];
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @param array<array-key, mixed> $content
      *
-     * @return array<string, array<string, mixed>>
+     * @return array<string, array<string, array<string, mixed>>>
      */
-    private static function resolve(array $content, ?string $locale): array
+    private static function resolve(array $content): array
     {
         $resolved = [];
 
@@ -75,10 +107,10 @@ final class SlotsContentProvider extends ArrayContentProvider
                 continue;
             }
 
-            $value = self::getLocalizedContent($localized, $locale);
+            $byLocale = self::filterLocalized($localized);
 
-            if ($value !== null) {
-                $resolved[(string) $id] = $value;
+            if ($byLocale !== []) {
+                $resolved[(string) $id] = $byLocale;
             }
         }
 
@@ -113,34 +145,25 @@ final class SlotsContentProvider extends ArrayContentProvider
     }
 
     /**
+     * Keeps only the locales mapped to a content object, keyed by locale.
+     *
      * @param array<array-key, mixed> $localized
      *
-     * @return array<string, mixed>|null
+     * @return array<string, array<string, mixed>>
      */
-    private static function getLocalizedContent(array $localized, ?string $locale): ?array
+    private static function filterLocalized(array $localized): array
     {
-        $value = null;
+        $result = [];
 
-        if ($locale !== null && \is_array($localized[$locale] ?? null)) {
-            $value = $localized[$locale];
-        } else {
-            foreach ($localized as $candidate) {
-                if (\is_array($candidate)) {
-                    $value = $candidate;
-
-                    break;
-                }
+        foreach ($localized as $locale => $value) {
+            if (\is_array($value)) {
+                /** @var array<string, mixed> $content */
+                $content = $value;
+                $result[(string) $locale] = $content;
             }
         }
 
-        if (!\is_array($value)) {
-            return null;
-        }
-
-        /** @var array<string, mixed> $content */
-        $content = $value;
-
-        return $content;
+        return $result;
     }
 
     /**

@@ -6,8 +6,8 @@ namespace Croct\Plug;
 
 use Composer\InstalledVersions;
 use Croct\Plug\Content\ContentProvider;
+use Croct\Plug\Content\DefaultContentProvider;
 use Croct\Plug\Content\NullContentProvider;
-use Croct\Plug\Content\SlotsContentProvider;
 use Croct\Plug\Exception\ConfigurationException;
 use Croct\Plug\Exception\CroctException;
 use Http\Discovery\Exception\NotFoundException;
@@ -29,8 +29,6 @@ use Psr\Log\LoggerInterface as Logger;
  */
 final class Croct implements Plug
 {
-    private const DEFAULT_CONTENT_PROVIDER_CLASS = 'Croct\\Content\\GeneratedContentProvider';
-
     public const DEFAULT_BASE_ENDPOINT_URL = 'https://api.croct.io';
 
     public const DEFAULT_TOKEN_DURATION = 86400;
@@ -174,10 +172,13 @@ final class Croct implements Plug
      *
      * @template F = never
      *
+     * @param string               $slotId  The slot ID, optionally versioned as `slot-id@version`
+     *                                       (e.g. `home-banner@2`).
      * @param FetchOptions<F>|null $options
      *
      * @return FetchResponse<array<string, mixed>, F>
      *
+     * @throws \InvalidArgumentException If the slot ID is malformed.
      * @throws CroctException If the request fails without a fallback.
      */
     public function fetchContent(string $slotId, ?FetchOptions $options = null): FetchResponse
@@ -244,7 +245,7 @@ final class Croct implements Plug
      * Discovers the content provider for the project.
      *
      * Prefers the content committed by the CLI as `slots.json`, falling back to a
-     * generated provider class when present, or a null provider otherwise.
+     * null provider when none is available.
      */
     private static function discoverContentProvider(): ContentProvider
     {
@@ -252,11 +253,7 @@ final class Croct implements Plug
         static $provider = null;
 
         if ($provider === null) {
-            /** @var ContentProvider $provider **/
-            $provider = SlotsContentProvider::fromProject()
-                ?? (\class_exists(self::DEFAULT_CONTENT_PROVIDER_CLASS)
-                    ? new (self::DEFAULT_CONTENT_PROVIDER_CLASS)()
-                    : new NullContentProvider());
+            $provider = DefaultContentProvider::fromProject() ?? new NullContentProvider();
         }
 
         return $provider;

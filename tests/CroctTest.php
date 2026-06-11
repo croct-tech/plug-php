@@ -12,7 +12,6 @@ use Croct\Plug\Exception\ConfigurationException;
 use Croct\Plug\IdentityStore;
 use Croct\Plug\InMemoryIdentityStore;
 use Croct\Plug\RequestContext;
-use Croct\Plug\Tests\Fixtures\InstalledContentProvider;
 use Croct\Plug\Token;
 use Croct\Plug\Uuid;
 use Http\Discovery\Psr18ClientDiscovery;
@@ -183,32 +182,6 @@ final class CroctTest extends TestCase
         $this->expectException(ConfigurationException::class);
 
         Croct::fromEnvironment(new InMemoryIdentityStore());
-    }
-
-    #[PreserveGlobalState(false)]
-    #[RunInSeparateProcess]
-    #[TestDox('Falls back to the discovered content provider when one is installed.')]
-    public function testUsesDiscoveredContentProvider(): void
-    {
-        \class_alias(InstalledContentProvider::class, 'Croct\\Content\\GeneratedContentProvider');
-
-        $factory = new Psr17Factory();
-        $mock = new MockClient();
-        $mock->addResponse($factory->createResponse(500));
-
-        $storage = new InMemoryIdentityStore(Uuid::parse(self::CLIENT_ID));
-
-        $croct = Croct::plug(
-            appId: self::APP_ID,
-            apiKey: ApiKey::of(EcKeyFactory::IDENTIFIER),
-            storage: $storage,
-            context: new RequestContext(),
-            httpClient: $mock,
-            requestFactory: $factory,
-            streamFactory: $factory,
-        );
-
-        self::assertSame(['title' => 'Generated default'], $croct->fetchContent('home-hero')->getContent());
     }
 
     #[PreserveGlobalState(false)]

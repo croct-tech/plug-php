@@ -47,16 +47,16 @@ final class HttpContentFetcher implements ContentFetcher
      */
     public function fetch(string $slotId, ?FetchOptions $options = null): FetchResponse
     {
-        $options ??= FetchOptions::empty();
+        $options ??= FetchOptions::default();
         $context = $this->context;
         $static = $options->isStatic();
 
-        $payload = ['slotId' => $slotId];
+        [$id, $version] = self::parseSlotId($slotId);
 
-        $version = $options->getVersion();
+        $payload = ['slotId' => $id];
 
         if ($version !== null) {
-            $payload['version'] = (string) $version;
+            $payload['version'] = $version;
         }
 
         $locale = $options->getPreferredLocale() ?? $context->getPreferredLocale();
@@ -105,7 +105,7 @@ final class HttpContentFetcher implements ContentFetcher
                 return $response;
             }
 
-            $content = $this->contentProvider->getContent($slotId);
+            $content = $this->contentProvider->getContent($id, $locale);
 
             if ($content !== null) {
                 /** @var FetchResponse<array<string, mixed>, F> $response */
@@ -116,5 +116,28 @@ final class HttpContentFetcher implements ContentFetcher
 
             throw new ContentException($exception->getMessage(), 0, $exception);
         }
+    }
+
+    /**
+     * Splits a slot ID into its identifier and optional version.
+     *
+     * The version is encoded as a suffix on the slot ID, as in `home-banner@2`. It must be a
+     * positive integer or the literal `latest`, which is the default and thus carries no version.
+     *
+     * @return array{string, string|null} The slot identifier and the version, or null for the latest.
+     *
+     * @throws \InvalidArgumentException If the slot ID is malformed.
+     */
+    private static function parseSlotId(string $slotId): array
+    {
+        $pattern = '/^(?<id>[a-z0-9]+(?:-[a-z0-9]+)*)(?:@(?<version>[1-9][0-9]*|latest))?$/';
+
+        if (\preg_match($pattern, $slotId, $matches) !== 1) {
+            throw new \InvalidArgumentException(\sprintf('Malformed slot ID "%s".', $slotId));
+        }
+
+        $version = $matches['version'] ?? '';
+
+        return [$matches['id'], $version === '' || $version === 'latest' ? null : $version];
     }
 }
