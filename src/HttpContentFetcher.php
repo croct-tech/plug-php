@@ -105,7 +105,7 @@ final class HttpContentFetcher implements ContentFetcher
                 return $response;
             }
 
-            $content = $this->contentProvider->getContent($id, $locale);
+            $content = $this->contentProvider->getSlotContent($id, $locale);
 
             if ($content !== null) {
                 /** @var FetchResponse<array<string, mixed>, F> $response */

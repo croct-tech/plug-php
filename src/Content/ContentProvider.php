@@ -17,5 +17,5 @@ interface ContentProvider
      *
      * @return array<string, mixed>|null The content of the slot, or null when none is available.
      */
-    public function getContent(string $id, ?string $language = null): ?array;
+    public function getSlotContent(string $id, ?string $language = null): ?array;
 }

@@ -18,12 +18,12 @@ final class ArrayContentProviderTest extends TestCase
     {
         $provider = new ArrayContentProvider(['home-hero' => ['title' => 'Hello']]);
 
-        self::assertSame(['title' => 'Hello'], $provider->getContent('home-hero'));
+        self::assertSame(['title' => 'Hello'], $provider->getSlotContent('home-hero'));
     }
 
     #[TestDox('Returns null for an unknown slot ID.')]
     public function testReturnsNullForUnknownSlot(): void
     {
-        self::assertNull((new ArrayContentProvider([]))->getContent('missing'));
+        self::assertNull((new ArrayContentProvider([]))->getSlotContent('missing'));
     }
 }

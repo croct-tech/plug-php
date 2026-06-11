@@ -109,16 +109,16 @@ final class DefaultContentProviderTest extends TestCase
 
         self::assertNotNull($provider);
         // Defaults to the project's default locale when no language is requested.
-        self::assertSame(['title' => 'Latest'], $provider->getContent('home-hero'));
+        self::assertSame(['title' => 'Latest'], $provider->getSlotContent('home-hero'));
         // Serves the requested language when available.
-        self::assertSame(['title' => 'Recente'], $provider->getContent('home-hero', 'pt'));
+        self::assertSame(['title' => 'Recente'], $provider->getSlotContent('home-hero', 'pt'));
         // Falls back to the default locale when the requested language is absent.
-        self::assertSame(['title' => 'Latest'], $provider->getContent('home-hero', 'fr'));
+        self::assertSame(['title' => 'Latest'], $provider->getSlotContent('home-hero', 'fr'));
         // Serves an explicitly requested language even when the default locale is absent.
-        self::assertSame(['label' => 'Comprar'], $provider->getContent('cta', 'pt'));
+        self::assertSame(['label' => 'Comprar'], $provider->getSlotContent('cta', 'pt'));
         // Gives up when neither the requested language nor the default locale is available.
-        self::assertNull($provider->getContent('cta'));
-        self::assertNull($provider->getContent('missing'));
+        self::assertNull($provider->getSlotContent('cta'));
+        self::assertNull($provider->getSlotContent('missing'));
     }
 
     #[TestDox('Skips malformed entries and resolves without a default locale.')]
@@ -164,13 +164,13 @@ final class DefaultContentProviderTest extends TestCase
         $provider = DefaultContentProvider::fromProject(VirtualFilesystem::path());
 
         self::assertNotNull($provider);
-        self::assertNull($provider->getContent('not-versions'));
-        self::assertNull($provider->getContent('no-valid-latest'));
-        self::assertNull($provider->getContent('no-localized-array'));
+        self::assertNull($provider->getSlotContent('not-versions'));
+        self::assertNull($provider->getSlotContent('no-valid-latest'));
+        self::assertNull($provider->getSlotContent('no-localized-array'));
         // Resolves the latest valid version for the requested language.
-        self::assertSame(['k' => 'v2'], $provider->getContent('valid', 'en'));
+        self::assertSame(['k' => 'v2'], $provider->getSlotContent('valid', 'en'));
         // Without a default locale, an unspecified language resolves to nothing.
-        self::assertNull($provider->getContent('valid'));
+        self::assertNull($provider->getSlotContent('valid'));
     }
 
     /**

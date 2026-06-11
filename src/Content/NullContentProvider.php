@@ -12,7 +12,7 @@ final class NullContentProvider implements ContentProvider
     /**
      * @return array<string, mixed>|null
      */
-    public function getContent(string $id, ?string $language = null): ?array
+    public function getSlotContent(string $id, ?string $language = null): ?array
     {
         return null;
     }

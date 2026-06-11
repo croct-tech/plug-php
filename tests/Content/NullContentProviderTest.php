@@ -16,6 +16,6 @@ final class NullContentProviderTest extends TestCase
     #[TestDox('Has no content for any slot.')]
     public function testHasNoContent(): void
     {
-        self::assertNull((new NullContentProvider())->getContent('home-hero'));
+        self::assertNull((new NullContentProvider())->getSlotContent('home-hero'));
     }
 }
