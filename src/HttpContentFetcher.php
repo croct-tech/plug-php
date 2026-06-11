@@ -47,7 +47,7 @@ final class HttpContentFetcher implements ContentFetcher
      */
     public function fetch(string $slotId, ?FetchOptions $options = null): FetchResponse
     {
-        $options ??= FetchOptions::default();
+        $options ??= FetchOptions::defaults();
         $context = $this->context;
         $static = $options->isStatic();
 

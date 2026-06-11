@@ -38,7 +38,7 @@ final class EvaluationOptions
      *
      * @return self<mixed>
      */
-    public static function default(): self
+    public static function defaults(): self
     {
         /** @var self<mixed> $options */
         $options = new self([], null, false);

@@ -52,7 +52,7 @@ final class HttpEvaluatorTest extends TestCase
 
         $result = $evaluator->evaluate(
             'user is returning',
-            EvaluationOptions::default()->withAttribute('plan', 'pro'),
+            EvaluationOptions::defaults()->withAttribute('plan', 'pro'),
         );
 
         self::assertTrue($result);
@@ -221,7 +221,7 @@ final class HttpEvaluatorTest extends TestCase
             new RequestContext(),
         );
 
-        $result = $evaluator->evaluate('???', EvaluationOptions::default()->withFallback(false));
+        $result = $evaluator->evaluate('???', EvaluationOptions::defaults()->withFallback(false));
 
         self::assertFalse($result);
     }

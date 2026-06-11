@@ -53,7 +53,7 @@ final class FetchOptions
      *
      * @return self<never>
      */
-    public static function default(): self
+    public static function defaults(): self
     {
         /** @var self<never> $options */
         $options = new self(null, false, false, [], false, null);

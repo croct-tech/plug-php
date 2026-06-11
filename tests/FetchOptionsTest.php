@@ -16,7 +16,7 @@ final class FetchOptionsTest extends TestCase
     #[TestDox('Default to empty.')]
     public function testEmptyHasNoOptions(): void
     {
-        $options = FetchOptions::default();
+        $options = FetchOptions::defaults();
 
         self::assertNull($options->getPreferredLocale());
         self::assertFalse($options->isStatic());
@@ -28,7 +28,7 @@ final class FetchOptionsTest extends TestCase
     #[TestDox('Build up immutably through the fluent API.')]
     public function testBuildsOptionsFluently(): void
     {
-        $options = FetchOptions::default()
+        $options = FetchOptions::defaults()
             ->withPreferredLocale('en-us')
             ->withStatic()
             ->withSchema()
@@ -46,12 +46,12 @@ final class FetchOptionsTest extends TestCase
     #[TestDox('Distinguish a null fallback from no fallback.')]
     public function testDistinguishesNullFallback(): void
     {
-        self::assertFalse(FetchOptions::default()->hasFallback());
+        self::assertFalse(FetchOptions::defaults()->hasFallback());
 
         /** @var mixed $fallback */
         $fallback = null;
 
-        $options = FetchOptions::default()->withFallback($fallback);
+        $options = FetchOptions::defaults()->withFallback($fallback);
 
         self::assertTrue($options->hasFallback());
         self::assertNull($options->getFallback());
@@ -60,7 +60,7 @@ final class FetchOptionsTest extends TestCase
     #[TestDox('Do not mutate the original instance.')]
     public function testWithMethodsAreImmutable(): void
     {
-        $options = FetchOptions::default();
+        $options = FetchOptions::defaults();
 
         $options->withPreferredLocale('en-us')->withStatic()->withSchema();
 
@@ -72,7 +72,7 @@ final class FetchOptionsTest extends TestCase
     #[TestDox('Replace all attributes when set as a whole.')]
     public function testReplacesAttributes(): void
     {
-        $options = FetchOptions::default()
+        $options = FetchOptions::defaults()
             ->withAttribute('a', 1)
             ->withAttributes(['b' => 2]);
 

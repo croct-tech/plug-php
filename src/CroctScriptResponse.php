@@ -26,19 +26,27 @@ final class CroctScriptResponse
         $this->content = $content;
     }
 
+    /**
+     * Gets the HTTP status code of the captured response.
+     */
     public function getStatusCode(): int
     {
         return $this->statusCode;
     }
 
     /**
-     * @return array<string, string>
+     * Gets the response headers.
+     *
+     * @return array<string, string> The headers, keyed by name.
      */
     public function getHeaders(): array
     {
         return $this->headers;
     }
 
+    /**
+     * Gets the raw response body relayed to the client.
+     */
     public function getContent(): string
     {
         return $this->content;

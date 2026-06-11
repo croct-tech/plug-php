@@ -61,7 +61,7 @@ final class HttpContentFetcherTest extends TestCase
 
         $response = $fetcher->fetch(
             'home-hero@2',
-            FetchOptions::default()->withPreferredLocale('en-us'),
+            FetchOptions::defaults()->withPreferredLocale('en-us'),
         );
 
         self::assertSame(['title' => 'Hello'], $response->getContent());
@@ -109,7 +109,7 @@ final class HttpContentFetcherTest extends TestCase
 
         $fetcher = $this->createFetcher($mock, $factory);
 
-        $response = $fetcher->fetch('home-hero', FetchOptions::default()->withSchema());
+        $response = $fetcher->fetch('home-hero', FetchOptions::defaults()->withSchema());
 
         self::assertSame(['type' => 'structure'], $response->getMetadata()?->getSchema());
 
@@ -144,7 +144,7 @@ final class HttpContentFetcherTest extends TestCase
         );
 
         $this->createFetcher($mock, $factory, $context, identity: $identity)
-            ->fetch('home-hero', FetchOptions::default()->withStatic());
+            ->fetch('home-hero', FetchOptions::defaults()->withStatic());
 
         $request = $mock->getLastRequest();
 
@@ -211,7 +211,7 @@ final class HttpContentFetcherTest extends TestCase
         $mock->addResponse($factory->createResponse(500));
 
         $response = $this->createFetcher($mock, $factory)
-            ->fetch('home-hero', FetchOptions::default()->withFallback(['title' => 'Default']));
+            ->fetch('home-hero', FetchOptions::defaults()->withFallback(['title' => 'Default']));
 
         self::assertSame(['title' => 'Default'], $response->getContent());
     }
@@ -255,7 +255,7 @@ final class HttpContentFetcherTest extends TestCase
         $provider = new ArrayContentProvider(['home-hero' => ['title' => 'Generated']]);
 
         $response = $this->createFetcher($mock, $factory, contentProvider: $provider)
-            ->fetch('home-hero', FetchOptions::default()->withFallback(['title' => 'Explicit']));
+            ->fetch('home-hero', FetchOptions::defaults()->withFallback(['title' => 'Explicit']));
 
         self::assertSame(['title' => 'Explicit'], $response->getContent());
     }
@@ -287,7 +287,7 @@ final class HttpContentFetcherTest extends TestCase
         );
 
         $response = $this->createFetcher($mock, $factory, contentProvider: $provider)
-            ->fetch('home-hero@2', FetchOptions::default()->withPreferredLocale('pt-br'));
+            ->fetch('home-hero@2', FetchOptions::defaults()->withPreferredLocale('pt-br'));
 
         self::assertSame(['title' => 'Olá'], $response->getContent());
     }
