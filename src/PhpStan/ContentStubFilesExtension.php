@@ -9,13 +9,13 @@ use PHPStan\PhpDoc\StubFilesExtension;
 /**
  * Registers the CLI-generated content typing stub with PHPStan.
  *
- * The stub is written to `.croct/types.php` at the project root by the Croct
- * CLI. It is provided to PHPStan only when present, so analysis keeps working
- * in projects that have not generated it yet.
+ * The stub is written to `slots.php` at the project root by the Croct CLI. It
+ * is provided to PHPStan only when present, so analysis keeps working in
+ * projects that have not generated it yet.
  */
 final class ContentStubFilesExtension implements StubFilesExtension
 {
-    private const STUB_PATH = '.croct' . \DIRECTORY_SEPARATOR . 'types.php';
+    private const STUB_PATH = 'slots.php';
 
     private string $workingDirectory;
 

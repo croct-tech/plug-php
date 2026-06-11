@@ -11,13 +11,13 @@ use SimpleXMLElement;
 /**
  * Registers the CLI-generated content typing stub with Psalm.
  *
- * The stub is written to `.croct/types.php` at the project root by the Croct
- * CLI. It is registered only when present, so analysis keeps working in
- * projects that have not generated it yet.
+ * The stub is written to `slots.php` at the project root by the Croct CLI. It
+ * is registered only when present, so analysis keeps working in projects that
+ * have not generated it yet.
  */
 final class ContentStubPlugin implements PluginEntryPoint
 {
-    private const STUB_PATH = '.croct' . \DIRECTORY_SEPARATOR . 'types.php';
+    private const STUB_PATH = 'slots.php';
 
     private ?string $baseDirectory;
 

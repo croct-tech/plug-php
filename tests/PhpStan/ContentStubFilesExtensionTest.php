@@ -27,7 +27,7 @@ final class ContentStubFilesExtensionTest extends TestCase
     #[TestDox('Provides the generated stub when it exists in the working directory.')]
     public function testProvidesTheStubWhenPresent(): void
     {
-        $stub = VirtualFilesystem::path('.croct/types.php');
+        $stub = VirtualFilesystem::path('slots.php');
 
         VirtualFilesystem::write($stub, '<?php');
 
