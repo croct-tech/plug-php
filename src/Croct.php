@@ -44,7 +44,7 @@ final class Croct implements Plug
 
     private CookieConfiguration $cookieConfiguration;
 
-    public function __construct(
+    private function __construct(
         string $appId,
         Session $session,
         Evaluator $evaluator,
@@ -79,7 +79,7 @@ final class Croct implements Plug
         ?RequestFactory $requestFactory = null,
         ?StreamFactory $streamFactory = null,
         ?Logger $logger = null,
-    ): self {
+    ): Plug {
         $key = ApiKey::from($apiKey);
         $context ??= RequestContext::fromGlobals();
         $baseEndpointUrl ??= self::DEFAULT_BASE_ENDPOINT_URL;
@@ -137,7 +137,7 @@ final class Croct implements Plug
      *
      * @throws ConfigurationException If required variables are missing or no transport is available.
      */
-    public static function fromEnvironment(?IdentityStore $storage = null): self
+    public static function fromEnvironment(?IdentityStore $storage = null): Plug
     {
         return self::build(self::getEnv(...), $storage ?? CookieStorage::global());
     }
@@ -151,7 +151,7 @@ final class Croct implements Plug
      *
      * @throws ConfigurationException If required variables are missing or no transport is available.
      */
-    public static function fromDotenv(?string $directory = null, ?IdentityStore $storage = null): self
+    public static function fromDotenv(?string $directory = null, ?IdentityStore $storage = null): Plug
     {
         if ($directory === null) {
             $cwd = \getcwd();
