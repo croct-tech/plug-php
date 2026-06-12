@@ -11,6 +11,7 @@ use Croct\Plug\Croct;
 use Croct\Plug\Exception\ConfigurationException;
 use Croct\Plug\IdentityStore;
 use Croct\Plug\InMemoryIdentityStore;
+use Croct\Plug\Plug;
 use Croct\Plug\RequestContext;
 use Croct\Plug\Tests\Fixtures\VirtualFilesystem;
 use Croct\Plug\Token;
@@ -370,7 +371,7 @@ final class CroctTest extends TestCase
         self::assertSame(self::CLIENT_ID, $emitted['ct.client_id'] ?? null);
     }
 
-    private function createCroct(MockClient $client, ?IdentityStore $storage = null): Croct
+    private function createCroct(MockClient $client, ?IdentityStore $storage = null): Plug
     {
         $factory = new Psr17Factory();
         $storage ??= new InMemoryIdentityStore();

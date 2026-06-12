@@ -76,7 +76,7 @@ final class FetchOptions
      *
      * @return self<TFallback>
      */
-    public function withStatic(bool $static = true): self
+    public function withStaticContent(bool $static = true): self
     {
         return $this->copy(static: $static);
     }
@@ -153,7 +153,7 @@ final class FetchOptions
     /**
      * Checks whether statically generated content is requested.
      */
-    public function isStatic(): bool
+    public function isStaticContent(): bool
     {
         return $this->static;
     }

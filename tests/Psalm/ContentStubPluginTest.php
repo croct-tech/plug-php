@@ -38,7 +38,7 @@ final class ContentStubPluginTest extends TestCase
     #[TestDox('Registers the generated stub when it exists in the base directory.')]
     public function testRegistersTheStubWhenPresent(): void
     {
-        $stub = VirtualFilesystem::path('slots.php');
+        $stub = VirtualFilesystem::path('slots.stub');
 
         VirtualFilesystem::write($stub, '<?php');
 

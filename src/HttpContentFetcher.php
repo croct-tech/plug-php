@@ -49,7 +49,7 @@ final class HttpContentFetcher implements ContentFetcher
     {
         $options ??= FetchOptions::defaults();
         $context = $this->context;
-        $static = $options->isStatic();
+        $static = $options->isStaticContent();
 
         [$id, $version] = self::parseSlotId($slotId);
 

@@ -19,7 +19,7 @@ final class FetchOptionsTest extends TestCase
         $options = FetchOptions::defaults();
 
         self::assertNull($options->getPreferredLocale());
-        self::assertFalse($options->isStatic());
+        self::assertFalse($options->isStaticContent());
         self::assertFalse($options->includesSchema());
         self::assertSame([], $options->getAttributes());
         self::assertFalse($options->hasFallback());
@@ -30,13 +30,13 @@ final class FetchOptionsTest extends TestCase
     {
         $options = FetchOptions::defaults()
             ->withPreferredLocale('en-us')
-            ->withStatic()
+            ->withStaticContent()
             ->withSchema()
             ->withAttribute('plan', 'pro')
             ->withFallback(['headline' => 'Welcome']);
 
         self::assertSame('en-us', $options->getPreferredLocale());
-        self::assertTrue($options->isStatic());
+        self::assertTrue($options->isStaticContent());
         self::assertTrue($options->includesSchema());
         self::assertSame(['plan' => 'pro'], $options->getAttributes());
         self::assertTrue($options->hasFallback());
@@ -62,10 +62,10 @@ final class FetchOptionsTest extends TestCase
     {
         $options = FetchOptions::defaults();
 
-        $options->withPreferredLocale('en-us')->withStatic()->withSchema();
+        $options->withPreferredLocale('en-us')->withStaticContent()->withSchema();
 
         self::assertNull($options->getPreferredLocale());
-        self::assertFalse($options->isStatic());
+        self::assertFalse($options->isStaticContent());
         self::assertFalse($options->includesSchema());
     }
 

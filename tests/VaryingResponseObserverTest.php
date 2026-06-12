@@ -78,7 +78,7 @@ final class VaryingResponseObserverTest extends TestCase
 
         self::assertSame(
             ['title' => 'Hello'],
-            $plug->fetchContent('home-hero', FetchOptions::defaults()->withStatic())->getContent(),
+            $plug->fetchContent('home-hero', FetchOptions::defaults()->withStaticContent())->getContent(),
         );
 
         self::assertSame(0, $calls);

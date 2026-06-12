@@ -73,7 +73,7 @@ final class VaryingResponseObserver implements Plug
      */
     public function fetchContent(string $slotId, ?FetchOptions $options = null): FetchResponse
     {
-        if (!($options?->isStatic() ?? false)) {
+        if (!($options?->isStaticContent() ?? false)) {
             ($this->notify)();
         }
 

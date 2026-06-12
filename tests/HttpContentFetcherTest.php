@@ -144,7 +144,7 @@ final class HttpContentFetcherTest extends TestCase
         );
 
         $this->createFetcher($mock, $factory, $context, identity: $identity)
-            ->fetch('home-hero', FetchOptions::defaults()->withStatic());
+            ->fetch('home-hero', FetchOptions::defaults()->withStaticContent());
 
         $request = $mock->getLastRequest();
 

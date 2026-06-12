@@ -263,7 +263,7 @@ final class Croct implements Plug
      *
      * @throws ConfigurationException If required variables are missing or no transport is available.
      */
-    private static function build(callable $source, IdentityStore $storage): self
+    private static function build(callable $source, IdentityStore $storage): Plug
     {
         $appId = $source('CROCT_APP_ID');
         $apiKey = $source('CROCT_API_KEY');
