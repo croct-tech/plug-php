@@ -7,6 +7,6 @@ namespace Croct\Content;
 /**
  * Maps component IDs to their content type definitions.
  */
-interface ComponentMap
+interface MappedComponents
 {
 }

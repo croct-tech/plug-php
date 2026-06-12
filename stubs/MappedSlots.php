@@ -7,6 +7,6 @@ namespace Croct\Content;
 /**
  * Maps slot IDs to their content type definitions.
  */
-interface SlotMap
+interface MappedSlots
 {
 }
