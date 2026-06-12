@@ -18,8 +18,8 @@ final class CookieConfigurationTest extends TestCase
     {
         $configuration = new CookieConfiguration();
 
-        self::assertSame('ct.client_id', $configuration->getClientIdName());
-        self::assertSame('ct.user_token', $configuration->getUserTokenName());
+        self::assertSame('ct_client_id', $configuration->getClientIdName());
+        self::assertSame('ct_user_token', $configuration->getUserTokenName());
         self::assertSame(31536000, $configuration->getClientIdDuration());
         self::assertSame(604800, $configuration->getUserTokenDuration());
         self::assertNull($configuration->getDomain());
@@ -55,14 +55,14 @@ final class CookieConfigurationTest extends TestCase
         self::assertSame(
             [
                 'clientId' => [
-                    'name' => 'ct.client_id',
+                    'name' => 'ct_client_id',
                     'maxAge' => 31536000,
                     'path' => '/',
                     'secure' => true,
                     'sameSite' => 'none',
                 ],
                 'userToken' => [
-                    'name' => 'ct.user_token',
+                    'name' => 'ct_user_token',
                     'maxAge' => 604800,
                     'path' => '/',
                     'secure' => true,

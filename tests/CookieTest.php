@@ -61,7 +61,7 @@ final class CookieTest extends TestCase
     public function testSerializesToSetCookieHeader(): void
     {
         $cookie = new Cookie(
-            name: 'ct.user_token',
+            name: 'ct_user_token',
             value: 'abc.def',
             expiration: 1000,
             path: '/',
@@ -73,7 +73,7 @@ final class CookieTest extends TestCase
 
         $header = $cookie->toSetCookieHeader(900);
 
-        self::assertStringContainsString('ct.user_token=abc.def', $header);
+        self::assertStringContainsString('ct_user_token=abc.def', $header);
         self::assertStringContainsString('Expires=Thu, 01 Jan 1970 00:16:40 GMT', $header);
         self::assertStringContainsString('Max-Age=100', $header);
         self::assertStringContainsString('Domain=example.com', $header);

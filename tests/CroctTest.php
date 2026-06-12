@@ -264,7 +264,7 @@ final class CroctTest extends TestCase
     {
         \putenv('CROCT_APP_ID=' . self::APP_ID);
         \putenv('CROCT_API_KEY=' . EcKeyFactory::IDENTIFIER);
-        $_COOKIE = ['ct.client_id' => self::CLIENT_ID];
+        $_COOKIE = ['ct_client_id' => self::CLIENT_ID];
 
         $croct = Croct::fromEnvironment();
 
@@ -344,7 +344,7 @@ final class CroctTest extends TestCase
         \chdir(__DIR__);
         $_SERVER['CROCT_APP_ID'] = self::APP_ID;
         $_SERVER['CROCT_API_KEY'] = EcKeyFactory::IDENTIFIER;
-        $_COOKIE = ['ct.client_id' => self::CLIENT_ID];
+        $_COOKIE = ['ct_client_id' => self::CLIENT_ID];
 
         $croct = Croct::fromDotenv();
 
@@ -356,7 +356,7 @@ final class CroctTest extends TestCase
     #[TestDox('Emits the global cookie storage cookies through the given emitter.')]
     public function testEmitsCookiesFromGlobalStorage(): void
     {
-        $_COOKIE = ['ct.client_id' => self::CLIENT_ID];
+        $_COOKIE = ['ct_client_id' => self::CLIENT_ID];
 
         // Prime the process-wide storage from the request cookies.
         CookieStorage::global();
@@ -368,7 +368,7 @@ final class CroctTest extends TestCase
             return true;
         });
 
-        self::assertSame(self::CLIENT_ID, $emitted['ct.client_id'] ?? null);
+        self::assertSame(self::CLIENT_ID, $emitted['ct_client_id'] ?? null);
     }
 
     private function createCroct(MockClient $client, ?IdentityStore $storage = null): Plug

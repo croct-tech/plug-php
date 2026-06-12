@@ -56,12 +56,13 @@ interface Plug
      * Fetches the personalized content of a slot.
      *
      * @template F = never
+     * @template S of bool = false
      *
-     * @param string               $slotId  The slot ID, optionally versioned as `slot-id@version`
-     *                                       (e.g. `home-banner@2`).
-     * @param FetchOptions<F>|null $options
+     * @param string                  $slotId  The slot ID, optionally versioned as `slot-id@version`
+     *                                          (e.g. `home-banner@2`).
+     * @param FetchOptions<F, S>|null $options
      *
-     * @return FetchResponse<array<string, mixed>, F>
+     * @return FetchResponse<array<string, mixed>, F, S>
      *
      * @throws \InvalidArgumentException If the slot ID is malformed.
      * @throws CroctException If the request fails without a fallback.

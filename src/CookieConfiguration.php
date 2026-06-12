@@ -9,9 +9,9 @@ namespace Croct\Plug;
  */
 final class CookieConfiguration
 {
-    public const DEFAULT_CLIENT_ID_NAME = 'ct.client_id';
+    public const DEFAULT_CLIENT_ID_NAME = 'ct_client_id';
 
-    public const DEFAULT_USER_TOKEN_NAME = 'ct.user_token';
+    public const DEFAULT_USER_TOKEN_NAME = 'ct_user_token';
 
     public const DEFAULT_CLIENT_ID_DURATION = 31536000;
 

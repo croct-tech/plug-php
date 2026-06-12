@@ -11,6 +11,7 @@ namespace Croct\Plug;
  * with-methods.
  *
  * @template-covariant TFallback The fallback content type, or `never` when no fallback is set.
+ * @template-covariant TSchema of bool The schema flag: `true` once the schema is requested.
  */
 final class FetchOptions
 {
@@ -51,11 +52,11 @@ final class FetchOptions
     /**
      * Creates the default set of options, with nothing set.
      *
-     * @return self<never>
+     * @return self<never, false>
      */
     public static function defaults(): self
     {
-        /** @var self<never> $options */
+        /** @var self<never, false> $options */
         $options = new self(null, false, false, [], false, null);
 
         return $options;
@@ -64,7 +65,7 @@ final class FetchOptions
     /**
      * Returns a copy that requests content in the given locale.
      *
-     * @return self<TFallback>
+     * @return self<TFallback, TSchema>
      */
     public function withPreferredLocale(string $preferredLocale): self
     {
@@ -74,7 +75,7 @@ final class FetchOptions
     /**
      * Returns a copy that fetches statically generated content (server-side only).
      *
-     * @return self<TFallback>
+     * @return self<TFallback, TSchema>
      */
     public function withStaticContent(bool $static = true): self
     {
@@ -82,13 +83,23 @@ final class FetchOptions
     }
 
     /**
-     * Returns a copy that includes the content schema in the response metadata.
+     * Returns a copy that includes (or excludes) the content schema in the response metadata.
      *
-     * @return self<TFallback>
+     * @return ($includeSchema is true ? self<TFallback, true> : self<TFallback, false>)
      */
     public function withSchema(bool $includeSchema = true): self
     {
-        return $this->copy(includeSchema: $includeSchema);
+        /** @var ($includeSchema is true ? self<TFallback, true> : self<TFallback, false>) $options */
+        $options = new self(
+            $this->preferredLocale,
+            $this->static,
+            $includeSchema,
+            $this->attributes,
+            $this->fallbackProvided,
+            $this->fallback,
+        );
+
+        return $options;
     }
 
     /**
@@ -96,7 +107,7 @@ final class FetchOptions
      *
      * @param array<string, mixed> $attributes
      *
-     * @return self<TFallback>
+     * @return self<TFallback, TSchema>
      */
     public function withAttributes(array $attributes): self
     {
@@ -106,7 +117,7 @@ final class FetchOptions
     /**
      * Returns a copy with the given custom attribute added.
      *
-     * @return self<TFallback>
+     * @return self<TFallback, TSchema>
      */
     public function withAttribute(string $name, mixed $value): self
     {
@@ -126,11 +137,12 @@ final class FetchOptions
      *
      * @param T $content
      *
-     * @return self<T>
+     * @return self<T, TSchema>
      */
     public function withFallback(mixed $content): self
     {
-        return new self(
+        /** @var self<T, TSchema> $options */
+        $options = new self(
             $this->preferredLocale,
             $this->static,
             $this->includeSchema,
@@ -138,6 +150,8 @@ final class FetchOptions
             true,
             $content,
         );
+
+        return $options;
     }
 
     /**
@@ -199,7 +213,7 @@ final class FetchOptions
      *
      * @param array<string, mixed>|null $attributes
      *
-     * @return self<TFallback>
+     * @return self<TFallback, TSchema>
      */
     private function copy(
         ?string $preferredLocale = null,
@@ -207,7 +221,8 @@ final class FetchOptions
         ?bool $includeSchema = null,
         ?array $attributes = null,
     ): self {
-        return new self(
+        /** @var self<TFallback, TSchema> $options */
+        $options = new self(
             $preferredLocale ?? $this->preferredLocale,
             $static ?? $this->static,
             $includeSchema ?? $this->includeSchema,
@@ -215,5 +230,7 @@ final class FetchOptions
             $this->fallbackProvided,
             $this->fallback,
         );
+
+        return $options;
     }
 }

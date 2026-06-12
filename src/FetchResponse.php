@@ -11,16 +11,19 @@ use Croct\Plug\Content\SlotMetadata;
  *
  * @template-covariant TContent The content type returned on success.
  * @template-covariant TFallback The fallback type returned when the fetch fails.
+ * @template-covariant TSchema of bool The schema flag: `true` when the schema was requested.
  */
 final class FetchResponse
 {
     /** @var TContent|TFallback */
     private mixed $content;
 
+    /** @var SlotMetadata<TSchema>|null */
     private ?SlotMetadata $metadata;
 
     /**
-     * @param TContent|TFallback $content
+     * @param TContent|TFallback         $content
+     * @param SlotMetadata<TSchema>|null $metadata
      */
     public function __construct(mixed $content, ?SlotMetadata $metadata = null)
     {
@@ -41,7 +44,7 @@ final class FetchResponse
     /**
      * Gets the content metadata.
      *
-     * @return SlotMetadata|null The metadata, or null if none is available.
+     * @return SlotMetadata<TSchema>|null The metadata, or null if none is available.
      */
     public function getMetadata(): ?SlotMetadata
     {
@@ -51,7 +54,7 @@ final class FetchResponse
     /**
      * Creates a response from the decoded API payload.
      *
-     * @return self<array<string, mixed>, never>
+     * @return self<array<string, mixed>, never, never>
      */
     public static function fromResponse(mixed $data): self
     {
@@ -68,7 +71,7 @@ final class FetchResponse
             }
         }
 
-        /** @var self<array<string, mixed>, never> $response */
+        /** @var self<array<string, mixed>, never, never> $response */
         $response = new self($content, $metadata);
 
         return $response;

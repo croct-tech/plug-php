@@ -7,9 +7,11 @@ namespace Croct\Plug;
 /**
  * Decorates another plug instance to detect when the response is varying by visitor.
  *
- * It runs a callback whenever visitor-specific data is read or changed. Reading the application ID
- * or the plug options and fetching static content return the same result for every visitor, so they
- * do not run it. It is useful for integrations that need to keep the response out of shared caches.
+ * It runs a callback whenever visitor-specific data is read or changed. The application ID, the plug
+ * options, and static content are identical for every visitor, so they do not run it. Reading the
+ * user token does not run it either: its only response effect is the session cookie, which
+ * integrations write based on whether the token changed. It is useful for integrations that need to
+ * keep the response out of shared caches.
  */
 final class VaryingResponseObserver implements Plug
 {
@@ -41,8 +43,6 @@ final class VaryingResponseObserver implements Plug
 
     public function getUserToken(): string
     {
-        ($this->notify)();
-
         return $this->plug->getUserToken();
     }
 
@@ -66,10 +66,11 @@ final class VaryingResponseObserver implements Plug
 
     /**
      * @template F = never
+     * @template S of bool = false
      *
-     * @param FetchOptions<F>|null $options
+     * @param FetchOptions<F, S>|null $options
      *
-     * @return FetchResponse<array<string, mixed>, F>
+     * @return FetchResponse<array<string, mixed>, F, S>
      */
     public function fetchContent(string $slotId, ?FetchOptions $options = null): FetchResponse
     {

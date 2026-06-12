@@ -28,18 +28,16 @@ final class VaryingResponseObserverTest extends TestCase
         });
 
         self::assertSame('cid', $plug->getClientId());
-        self::assertSame('tok', $plug->getUserToken());
         self::assertTrue($plug->evaluate('user is returning'));
         self::assertSame(['title' => 'Hello'], $plug->fetchContent('home-hero')->getContent());
 
         $plug->identify('user-1');
         $plug->anonymize();
 
-        self::assertSame(6, $calls);
+        self::assertSame(5, $calls);
         self::assertSame(
             [
                 'getClientId',
-                'getUserToken',
                 'evaluate',
                 'fetchContent',
                 'identify',
@@ -83,6 +81,23 @@ final class VaryingResponseObserverTest extends TestCase
 
         self::assertSame(0, $calls);
         self::assertSame(['fetchContent'], $inner->calls);
+    }
+
+    #[TestDox('Reads the user token without running the callback.')]
+    public function testDoesNotVaryOnUserTokenRead(): void
+    {
+        $inner = $this->createPlug();
+
+        $calls = 0;
+        $plug = new VaryingResponseObserver($inner, static function () use (&$calls): void {
+            ++$calls;
+        });
+
+        // The token's only response effect is the session cookie, written based on whether it changed.
+        self::assertSame('tok', $plug->getUserToken());
+
+        self::assertSame(0, $calls);
+        self::assertSame(['getUserToken'], $inner->calls);
     }
 
     /**
@@ -137,16 +152,17 @@ final class VaryingResponseObserverTest extends TestCase
 
             /**
              * @template F = never
+             * @template S of bool = false
              *
-             * @param FetchOptions<F>|null $options
+             * @param FetchOptions<F, S>|null $options
              *
-             * @return FetchResponse<array<string, mixed>, F>
+             * @return FetchResponse<array<string, mixed>, F, S>
              */
             public function fetchContent(string $slotId, ?FetchOptions $options = null): FetchResponse
             {
                 $this->calls[] = 'fetchContent';
 
-                /** @var FetchResponse<array<string, mixed>, F> $response */
+                /** @var FetchResponse<array<string, mixed>, F, S> $response */
                 $response = new FetchResponse(['title' => 'Hello']);
 
                 return $response;

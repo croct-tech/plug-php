@@ -49,8 +49,8 @@ final class CookieStorageTest extends TestCase
         $token = Token::issue(appId: self::APP_ID, subject: 'user-1', now: 1000);
 
         $storage = CookieStorage::fromArray([
-            'ct.client_id' => self::CLIENT_ID,
-            'ct.user_token' => $token->toString(),
+            'ct_client_id' => self::CLIENT_ID,
+            'ct_user_token' => $token->toString(),
         ]);
 
         self::assertSame(self::CLIENT_ID, $storage->getClientId()?->toString());
@@ -61,8 +61,8 @@ final class CookieStorageTest extends TestCase
     public function testIgnoresUnparseableValues(): void
     {
         $storage = CookieStorage::fromArray([
-            'ct.client_id' => 'not-a-uuid',
-            'ct.user_token' => 'garbage',
+            'ct_client_id' => 'not-a-uuid',
+            'ct_user_token' => 'garbage',
         ]);
 
         self::assertNull($storage->getClientId());
@@ -93,9 +93,9 @@ final class CookieStorageTest extends TestCase
 
         [$clientIdCookie, $userTokenCookie] = $storage->getResponseCookies();
 
-        self::assertSame('ct.client_id', $clientIdCookie->getName());
+        self::assertSame('ct_client_id', $clientIdCookie->getName());
         self::assertSame($clientId->toString(), $clientIdCookie->getValue());
-        self::assertSame('ct.user_token', $userTokenCookie->getName());
+        self::assertSame('ct_user_token', $userTokenCookie->getName());
         self::assertSame($token->toString(), $userTokenCookie->getValue());
     }
 
@@ -127,7 +127,7 @@ final class CookieStorageTest extends TestCase
         self::assertSame(
             [
                 [
-                    'name' => 'ct.client_id',
+                    'name' => 'ct_client_id',
                     'value' => $clientId->toString(),
                     'options' => [
                         'expires' => 1100,
@@ -139,7 +139,7 @@ final class CookieStorageTest extends TestCase
                     ],
                 ],
                 [
-                    'name' => 'ct.user_token',
+                    'name' => 'ct_user_token',
                     'value' => $token->toString(),
                     'options' => [
                         'expires' => 1050,
@@ -159,7 +159,7 @@ final class CookieStorageTest extends TestCase
     public function testReadsFromGlobals(): void
     {
         $originalCookie = $_COOKIE;
-        $_COOKIE = ['ct.client_id' => self::CLIENT_ID];
+        $_COOKIE = ['ct_client_id' => self::CLIENT_ID];
 
         try {
             $storage = CookieStorage::fromGlobals();
@@ -174,7 +174,7 @@ final class CookieStorageTest extends TestCase
     public function testReadsFromServerRequest(): void
     {
         $request = (new Psr17Factory())->createServerRequest('GET', 'https://example.com/')
-            ->withCookieParams(['ct.client_id' => self::CLIENT_ID]);
+            ->withCookieParams(['ct_client_id' => self::CLIENT_ID]);
 
         $storage = CookieStorage::fromServerRequest($request);
 
@@ -185,7 +185,7 @@ final class CookieStorageTest extends TestCase
     public function testGlobalReturnsMemoizedInstance(): void
     {
         $originalCookie = $_COOKIE;
-        $_COOKIE = ['ct.client_id' => self::CLIENT_ID];
+        $_COOKIE = ['ct_client_id' => self::CLIENT_ID];
 
         try {
             CookieStorage::reset();

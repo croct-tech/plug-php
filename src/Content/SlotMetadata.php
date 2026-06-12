@@ -6,6 +6,8 @@ namespace Croct\Plug\Content;
 
 /**
  * Metadata describing the content served for a slot.
+ *
+ * @template-covariant TSchema of bool The schema flag: `true` when the schema was requested.
  */
 final class SlotMetadata
 {
@@ -38,6 +40,8 @@ final class SlotMetadata
      *
      * @param array<array-key, mixed> $data
      *
+     * @return self<never>
+     *
      * @throws \InvalidArgumentException If a field is present but invalid.
      */
     public static function fromArray(array $data): self
@@ -60,12 +64,15 @@ final class SlotMetadata
             throw new \InvalidArgumentException('The content schema is invalid.');
         }
 
-        return new self(
+        /** @var self<never> $metadata */
+        $metadata = new self(
             $version,
             self::parseContentSource($data['contentSource'] ?? null),
             $experience !== null ? ExperienceMetadata::fromArray($experience) : null,
             $schema !== null ? self::stringifyKeys($schema) : null,
         );
+
+        return $metadata;
     }
 
     /**
@@ -120,7 +127,7 @@ final class SlotMetadata
     /**
      * Gets the content schema, present only when the schema was requested.
      *
-     * @return array<string, mixed>|null The schema, or null if not requested.
+     * @return (TSchema is false ? array<string, mixed>|null : array<string, mixed>) The schema.
      */
     public function getSchema(): ?array
     {
