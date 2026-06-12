@@ -31,5 +31,6 @@
     </rule>
 
     <file>src</file>
+    <file>stubs</file>
     <file>tests</file>
 </ruleset>

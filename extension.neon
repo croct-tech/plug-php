@@ -2,6 +2,10 @@ parameters:
     stubFiles:
         - src/FetchResponse.php
         - src/FetchOptions.php
+        - stubs/Components.php
+        - stubs/Slots.php
+        - stubs/ComponentMap.php
+        - stubs/SlotMap.php
 
 services:
     -

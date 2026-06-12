@@ -68,6 +68,7 @@
   "prefer-stable": true,
   "autoload": {
     "psr-4": {
+      "Croct\\Content\\": "stubs/",
       "Croct\\Plug\\": "src/"
     }
   },
