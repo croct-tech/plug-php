@@ -8,6 +8,7 @@ use Croct\Plug\EvaluationOptions;
 use Croct\Plug\FetchOptions;
 use Croct\Plug\FetchResponse;
 use Croct\Plug\Plug;
+use Croct\Plug\Token;
 use Croct\Plug\VaryingResponseObserver;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\TestDox;
@@ -94,20 +95,27 @@ final class VaryingResponseObserverTest extends TestCase
         });
 
         // The token's only response effect is the session cookie, written based on whether it changed.
-        self::assertSame('tok', $plug->getUserToken());
+        self::assertSame($inner->token, $plug->getUserToken());
 
         self::assertSame(0, $calls);
         self::assertSame(['getUserToken'], $inner->calls);
     }
 
     /**
-     * @return Plug&object{calls: list<string>}
+     * @return Plug&object{calls: list<string>, token: Token}
      */
     private function createPlug(): Plug
     {
         return new class implements Plug {
             /** @var list<string> */
             public array $calls = [];
+
+            public Token $token;
+
+            public function __construct()
+            {
+                $this->token = Token::issue(appId: '7e9d59a9-e4b3-45d4-b1c7-48287f1e5e8a', now: 1000);
+            }
 
             public function getAppId(): string
             {
@@ -123,11 +131,11 @@ final class VaryingResponseObserverTest extends TestCase
                 return 'cid';
             }
 
-            public function getUserToken(): string
+            public function getUserToken(): Token
             {
                 $this->calls[] = 'getUserToken';
 
-                return 'tok';
+                return $this->token;
             }
 
             /**

@@ -41,7 +41,7 @@ final class VaryingResponseObserver implements Plug
         return $this->plug->getClientId();
     }
 
-    public function getUserToken(): string
+    public function getUserToken(): Token
     {
         return $this->plug->getUserToken();
     }

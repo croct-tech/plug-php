@@ -240,9 +240,9 @@ final class Croct implements Plug
         return $this->session->getClientId()->toString();
     }
 
-    public function getUserToken(): string
+    public function getUserToken(): Token
     {
-        return $this->session->getUserToken()->toString();
+        return $this->session->getUserToken();
     }
 
     /**

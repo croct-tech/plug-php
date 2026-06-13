@@ -22,9 +22,9 @@ interface Plug
     public function getClientId(): string;
 
     /**
-     * Returns the visitor's serialized user token.
+     * Returns the visitor's user token.
      */
-    public function getUserToken(): string;
+    public function getUserToken(): Token;
 
     /**
      * Returns the options for bootstrapping the client-side SDK.

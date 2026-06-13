@@ -14,7 +14,6 @@ use Croct\Plug\InMemoryIdentityStore;
 use Croct\Plug\Plug;
 use Croct\Plug\RequestContext;
 use Croct\Plug\Tests\Fixtures\VirtualFilesystem;
-use Croct\Plug\Token;
 use Croct\Plug\Uuid;
 use Http\Discovery\Psr18ClientDiscovery;
 use Http\Mock\Client as MockClient;
@@ -106,7 +105,7 @@ final class CroctTest extends TestCase
 
         self::assertInstanceOf(RequestInterface::class, $request);
         self::assertSame(self::CLIENT_ID, $request->getHeaderLine('X-Client-Id'));
-        self::assertSame($croct->getUserToken(), $request->getHeaderLine('X-Token'));
+        self::assertSame($croct->getUserToken()->toString(), $request->getHeaderLine('X-Token'));
     }
 
     #[TestDox('Persists the resolved session to the storage.')]
@@ -117,11 +116,11 @@ final class CroctTest extends TestCase
         $croct = $this->createCroct(new MockClient(), $storage);
 
         self::assertSame($croct->getClientId(), $storage->getClientId()?->toString());
-        self::assertSame($croct->getUserToken(), $storage->getUserToken()?->toString());
+        self::assertSame($croct->getUserToken()->toString(), $storage->getUserToken()?->toString());
 
         $croct->identify('user-77');
 
-        self::assertSame($croct->getUserToken(), $storage->getUserToken()->toString());
+        self::assertSame($croct->getUserToken()->toString(), $storage->getUserToken()->toString());
     }
 
     #[TestDox('Reflects identification and anonymization in the user token.')]
@@ -131,11 +130,11 @@ final class CroctTest extends TestCase
 
         $croct->identify('user-77');
 
-        self::assertSame('user-77', Token::parse($croct->getUserToken())->getSubject());
+        self::assertSame('user-77', $croct->getUserToken()->getSubject());
 
         $croct->anonymize();
 
-        self::assertTrue(Token::parse($croct->getUserToken())->isAnonymous());
+        self::assertTrue($croct->getUserToken()->isAnonymous());
     }
 
     #[TestDox('Exposes the application ID, client ID, and user token.')]
@@ -145,7 +144,7 @@ final class CroctTest extends TestCase
 
         self::assertSame(self::APP_ID, $croct->getAppId());
         self::assertSame(self::CLIENT_ID, $croct->getClientId());
-        self::assertNotSame('', $croct->getUserToken());
+        self::assertNotSame('', $croct->getUserToken()->toString());
     }
 
     #[TestDox('Exposes the browser plug options, including the cookie settings.')]
@@ -210,7 +209,7 @@ final class CroctTest extends TestCase
 
         self::assertInstanceOf(RequestInterface::class, $request);
         self::assertSame(self::CLIENT_ID, $request->getHeaderLine('X-Client-Id'));
-        self::assertSame($croct->getUserToken(), $request->getHeaderLine('X-Token'));
+        self::assertSame($croct->getUserToken()->toString(), $request->getHeaderLine('X-Token'));
     }
 
     #[TestDox('Can be built from the environment variables.')]
@@ -224,7 +223,7 @@ final class CroctTest extends TestCase
         self::assertSame(self::APP_ID, $croct->getAppId());
         self::assertSame(self::CLIENT_ID, $croct->getClientId());
 
-        $token = Token::parse($croct->getUserToken());
+        $token = $croct->getUserToken();
 
         self::assertSame(self::APP_ID, $token->getApplicationId());
         self::assertTrue($token->isAnonymous());

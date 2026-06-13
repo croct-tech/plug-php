@@ -112,14 +112,13 @@ final class Session implements IdentityStore
     private function resolveToken(?Token $token): Token
     {
         $userId = $this->identity?->getUserId();
-        $hasResolver = $this->identity !== null;
 
         // Re-issue for the authenticated user when the token is missing, no longer usable, or its
         // subject no longer matches.
         if ($token === null
             || ($this->signTokens && !$token->isSigned())
             || !$token->isValidNow($this->now)
-            || ($hasResolver && ($userId === null ? !$token->isAnonymous() : !$token->isSubject($userId)))
+            || ($this->identity !== null && ($userId === null ? !$token->isAnonymous() : !$token->isSubject($userId)))
         ) {
             return $this->issueToken($userId);
         }
