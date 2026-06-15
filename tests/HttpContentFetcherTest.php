@@ -101,7 +101,7 @@ final class HttpContentFetcherTest extends TestCase
                 $factory->createStream(
                     (string) \json_encode([
                         'content' => ['title' => 'Hello'],
-                        'metadata' => ['version' => '1', 'schema' => ['type' => 'structure']],
+                        'metadata' => ['version' => '1', 'contentSource' => 'slot', 'schema' => ['type' => 'structure']],
                     ]),
                 ),
             ),

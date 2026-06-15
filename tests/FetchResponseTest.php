@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Croct\Plug\Tests;
 
+use Croct\Plug\Content\ContentSource;
 use Croct\Plug\Content\SlotMetadata;
 use Croct\Plug\FetchResponse;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -20,7 +21,7 @@ final class FetchResponseTest extends TestCase
         /** @var array<string, mixed> $content */
         $content = ['title' => 'Hello'];
 
-        $response = new FetchResponse($content, new SlotMetadata('1'));
+        $response = new FetchResponse($content, new SlotMetadata('1', ContentSource::SLOT));
 
         self::assertSame(['title' => 'Hello'], $response->getContent());
         self::assertSame('1', $response->getMetadata()?->getVersion());
@@ -43,7 +44,7 @@ final class FetchResponseTest extends TestCase
     {
         $response = FetchResponse::fromResponse([
             'content' => ['title' => 'Hello'],
-            'metadata' => ['version' => '2'],
+            'metadata' => ['version' => '2', 'contentSource' => 'slot'],
         ]);
 
         self::assertSame(['title' => 'Hello'], $response->getContent());

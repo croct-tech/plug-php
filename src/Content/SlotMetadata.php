@@ -11,9 +11,9 @@ namespace Croct\Plug\Content;
  */
 final class SlotMetadata
 {
-    private ?string $version;
+    private string $version;
 
-    private ?ContentSource $contentSource;
+    private ContentSource $contentSource;
 
     private ?ExperienceMetadata $experience;
 
@@ -24,8 +24,8 @@ final class SlotMetadata
      * @param array<string, mixed>|null $schema
      */
     public function __construct(
-        ?string $version = null,
-        ?ContentSource $contentSource = null,
+        string $version,
+        ContentSource $contentSource,
         ?ExperienceMetadata $experience = null,
         ?array $schema = null,
     ) {
@@ -48,8 +48,8 @@ final class SlotMetadata
     {
         $version = $data['version'] ?? null;
 
-        if ($version !== null && !\is_string($version)) {
-            throw new \InvalidArgumentException('The content version is invalid.');
+        if (!\is_string($version)) {
+            throw new \InvalidArgumentException('The content version is missing or invalid.');
         }
 
         $experience = $data['experience'] ?? null;
@@ -78,16 +78,12 @@ final class SlotMetadata
     /**
      * Parses the content source value.
      *
-     * @throws \InvalidArgumentException If the value is present but not a known content source.
+     * @throws \InvalidArgumentException If the value is missing or not a known content source.
      */
-    private static function parseContentSource(mixed $value): ?ContentSource
+    private static function parseContentSource(mixed $value): ContentSource
     {
-        if ($value === null) {
-            return null;
-        }
-
         if (!\is_string($value)) {
-            throw new \InvalidArgumentException('The content source is invalid.');
+            throw new \InvalidArgumentException('The content source is missing or invalid.');
         }
 
         return ContentSource::tryFrom($value)
@@ -97,9 +93,9 @@ final class SlotMetadata
     /**
      * Gets the content version.
      *
-     * @return string|null The version, or null if unversioned.
+     * @return string The version.
      */
-    public function getVersion(): ?string
+    public function getVersion(): string
     {
         return $this->version;
     }
@@ -107,9 +103,9 @@ final class SlotMetadata
     /**
      * Gets the source the content was served from.
      *
-     * @return ContentSource|null The content source, or null if unknown.
+     * @return ContentSource The content source.
      */
-    public function getContentSource(): ?ContentSource
+    public function getContentSource(): ContentSource
     {
         return $this->contentSource;
     }

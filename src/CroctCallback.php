@@ -7,10 +7,8 @@ namespace Croct\Plug;
 /**
  * A script tag that runs a snippet once the client-side SDK is plugged.
  *
- * It registers the snippet through the `onCroctPlug` queue rendered by {@see CroctScript}, so the
- * code runs with the `croct` instance as soon as it is ready, regardless of how or when the loader
- * is fetched. The queue is defined here too, so the snippet is safe even when it appears before the
- * loader.
+ * It registers the snippet through the `onCroctPlug` queue, defining the queue first (the same way
+ * {@see CroctScript} does) so the snippet stays safe even when it renders before the loader.
  */
 final class CroctCallback implements \Stringable
 {
@@ -31,10 +29,11 @@ final class CroctCallback implements \Stringable
             : \sprintf(' nonce="%s"', \htmlspecialchars($this->nonce, ENT_QUOTES));
 
         return \sprintf(
-            '<script%s>(window.onCroctPlug=window.onCroctPlug||function(f){(onCroctPlug.q=onCroctPlug.q||[]).push(f)})'
-            . '(function(croct){%s})</script>',
+            '<script%s>(%s)(croct=>{%s})</script>',
             $nonceAttribute,
-            $this->body,
+            CroctScript::QUEUE,
+            // Trim the indentation a template block adds around the snippet.
+            \trim($this->body),
         );
     }
 }

@@ -21,6 +21,14 @@ final class CroctScript implements \Stringable
      */
     public const DEFAULT_SCRIPT_URL = 'https://cdn.croct.io/js/v1/lib/plug.js';
 
+    /**
+     * Defines the `onCroctPlug` queue if absent, so callbacks can register before the SDK loads.
+     *
+     * Shared by the loader and {@see CroctCallback} so a snippet stays safe even when it renders
+     * before the loader (for example, body placement).
+     */
+    public const QUEUE = 'window.onCroctPlug=window.onCroctPlug||(f=>(onCroctPlug.q=onCroctPlug.q||[]).push(f))';
+
     private string $scriptSrc;
 
     /** @var array<string, mixed> */
@@ -64,8 +72,7 @@ final class CroctScript implements \Stringable
 
         return \sprintf(
             // The queue lets page code register `onCroctPlug` callbacks before the SDK is ready.
-            '<script%s>window.onCroctPlug=window.onCroctPlug||function(f){(onCroctPlug.q=onCroctPlug.q||[]).push(f)}'
-            . '</script>'
+            '<script%s>%s</script>'
             . '<script src="%s"%s%s></script>'
             // Plug the SDK, then drain the queue. Run now when the loader has already executed (sync,
             // or async resolved before this tag), otherwise on its load event (defer/async).
@@ -73,6 +80,7 @@ final class CroctScript implements \Stringable
             . 'window.onCroctPlug=function(f){f(croct)};for(var i=0;i<q.length;i++)q[i](croct)}'
             . 'window.croct?b():s.onload=b})(document.currentScript.previousElementSibling)</script>',
             $nonceAttribute,
+            self::QUEUE,
             \htmlspecialchars($this->scriptSrc, ENT_QUOTES),
             $modeAttribute,
             $nonceAttribute,

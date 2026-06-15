@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
 final class CroctScriptTest extends TestCase
 {
     private const QUEUE = '<script>window.onCroctPlug=window.onCroctPlug||'
-        . 'function(f){(onCroctPlug.q=onCroctPlug.q||[]).push(f)}</script>';
+        . '(f=>(onCroctPlug.q=onCroctPlug.q||[]).push(f))</script>';
 
     private const BOOTSTRAP = '<script>(function(s){function b(){croct.plug(%s);var q=onCroctPlug.q||[];'
         . 'window.onCroctPlug=function(f){f(croct)};for(var i=0;i<q.length;i++)q[i](croct)}'

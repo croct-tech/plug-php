@@ -14,15 +14,15 @@ use PHPUnit\Framework\TestCase;
 final class CroctCallbackTest extends TestCase
 {
     private const QUEUE = '(window.onCroctPlug=window.onCroctPlug||'
-        . 'function(f){(onCroctPlug.q=onCroctPlug.q||[]).push(f)})';
+        . '(f=>(onCroctPlug.q=onCroctPlug.q||[]).push(f)))';
 
     #[TestDox('Registers the snippet through the onCroctPlug queue.')]
     public function testRegistersSnippetThroughQueue(): void
     {
-        $snippet = "croct.track('linkOpened', {url: location.href});";
+        $snippet = "croct.track('linkOpened', {link: location.href});";
 
         self::assertSame(
-            '<script>' . self::QUEUE . '(function(croct){' . $snippet . '})</script>',
+            '<script>' . self::QUEUE . '(croct=>{' . $snippet . '})</script>',
             (string) new CroctCallback($snippet),
         );
     }
@@ -33,8 +33,17 @@ final class CroctCallbackTest extends TestCase
         $snippet = 'croct.track("x");';
 
         self::assertSame(
-            '<script nonce="r4nd0m">' . self::QUEUE . '(function(croct){' . $snippet . '})</script>',
+            '<script nonce="r4nd0m">' . self::QUEUE . '(croct=>{' . $snippet . '})</script>',
             (string) new CroctCallback($snippet, 'r4nd0m'),
+        );
+    }
+
+    #[TestDox('Trims the indentation a template block adds around the snippet.')]
+    public function testTrimsSnippet(): void
+    {
+        self::assertSame(
+            '<script>' . self::QUEUE . '(croct=>{croct.track("x");})</script>',
+            (string) new CroctCallback("\n      croct.track(\"x\");\n    "),
         );
     }
 }

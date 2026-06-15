@@ -47,10 +47,13 @@ final class SlotMetadataTest extends TestCase
     #[TestDox('Defaults to null when the optional fields are absent.')]
     public function testCreatesFromMinimalMetadata(): void
     {
-        $metadata = SlotMetadata::fromArray([]);
+        $metadata = SlotMetadata::fromArray([
+            'version' => '1',
+            'contentSource' => 'slot',
+        ]);
 
-        self::assertNull($metadata->getVersion());
-        self::assertNull($metadata->getContentSource());
+        self::assertSame('1', $metadata->getVersion());
+        self::assertSame(ContentSource::SLOT, $metadata->getContentSource());
         self::assertNull($metadata->getSchema());
         self::assertNull($metadata->getExperience());
     }
@@ -61,20 +64,26 @@ final class SlotMetadataTest extends TestCase
     public static function getTestsForInvalidData(): array
     {
         return [
+            'missing version' => [
+                'data' => ['contentSource' => 'slot'],
+            ],
             'invalid version' => [
-                'data' => ['version' => 3],
+                'data' => ['version' => 3, 'contentSource' => 'slot'],
+            ],
+            'missing content source' => [
+                'data' => ['version' => '1'],
             ],
             'invalid content source type' => [
-                'data' => ['contentSource' => 3],
+                'data' => ['version' => '1', 'contentSource' => 3],
             ],
             'unknown content source' => [
-                'data' => ['contentSource' => 'unknown'],
+                'data' => ['version' => '1', 'contentSource' => 'unknown'],
             ],
             'invalid experience' => [
-                'data' => ['experience' => 'x'],
+                'data' => ['version' => '1', 'contentSource' => 'slot', 'experience' => 'x'],
             ],
             'invalid schema' => [
-                'data' => ['schema' => 'x'],
+                'data' => ['version' => '1', 'contentSource' => 'slot', 'schema' => 'x'],
             ],
         ];
     }
