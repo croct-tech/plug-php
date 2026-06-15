@@ -116,11 +116,21 @@ final class CroctTest extends TestCase
         $croct = $this->createCroct(new MockClient(), $storage);
 
         self::assertSame($croct->getClientId(), $storage->getClientId()?->toString());
-        self::assertSame($croct->getUserToken()->toString(), $storage->getUserToken()?->toString());
+
+        // Resolving through the plug persists the token, so read the storage afterwards.
+        $resolved = $croct->getUserToken();
+        $stored = $storage->getUserToken();
+
+        self::assertNotNull($stored);
+        self::assertTrue($resolved->equals($stored));
 
         $croct->identify('user-77');
 
-        self::assertSame($croct->getUserToken()->toString(), $storage->getUserToken()->toString());
+        $identified = $croct->getUserToken();
+        $persisted = $storage->getUserToken();
+
+        self::assertNotNull($persisted);
+        self::assertTrue($identified->equals($persisted));
     }
 
     #[TestDox('Reflects identification and anonymization in the user token.')]

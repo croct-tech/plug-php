@@ -54,7 +54,11 @@ final class CookieStorageTest extends TestCase
         ]);
 
         self::assertSame(self::CLIENT_ID, $storage->getClientId()?->toString());
-        self::assertSame($token->toString(), $storage->getUserToken()?->toString());
+
+        $stored = $storage->getUserToken();
+
+        self::assertNotNull($stored);
+        self::assertTrue($token->equals($stored));
     }
 
     #[TestDox('Ignores an unparseable client ID or user token.')]

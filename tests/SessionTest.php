@@ -70,7 +70,7 @@ final class SessionTest extends TestCase
 
         $session = $this->createSession(null, $token);
 
-        self::assertSame($token->toString(), $session->getUserToken()->toString());
+        self::assertTrue($token->equals($session->getUserToken()));
     }
 
     #[TestDox('Anonymizes an expired token when no user is resolved.')]
@@ -119,7 +119,7 @@ final class SessionTest extends TestCase
 
         $session = $this->createSession(null, $identified, identity: $this->resolver('alice'));
 
-        self::assertSame($identified->toString(), $session->getUserToken()->toString());
+        self::assertTrue($identified->equals($session->getUserToken()));
     }
 
     #[TestDox('Signs an unsigned token, keeping the resolved user.')]
