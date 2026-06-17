@@ -1,0 +1,12 @@
+parameters:
+    stubFiles:
+        - src/FetchResponse.php
+        - src/FetchOptions.php
+
+services:
+    -
+        class: Croct\Plug\PhpStan\ContentStubFilesExtension
+        arguments:
+            workingDirectory: %currentWorkingDirectory%
+        tags:
+            - phpstan.stubFilesExtension
