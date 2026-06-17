@@ -33,7 +33,7 @@ Run this command to install the SDK:
 composer require croct/plug-php
 ```
 
-See our [quick start guide](https://docs.croct.com/reference/sdk/php/installation) for more details.
+See our [quick start guide](https://docs.croct.com/reference/sdk/php/integration) for more details.
 
 ## Documentation
 
