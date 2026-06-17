@@ -8,7 +8,6 @@ use Croct\Plug\ApiKey;
 use Croct\Plug\Content\ArrayContentProvider;
 use Croct\Plug\Content\ContentProvider;
 use Croct\Plug\Content\ContentSource;
-use Croct\Plug\Content\DefaultContentProvider;
 use Croct\Plug\Exception\ContentException;
 use Croct\Plug\FetchOptions;
 use Croct\Plug\HttpContentFetcher;
@@ -101,7 +100,11 @@ final class HttpContentFetcherTest extends TestCase
                 $factory->createStream(
                     (string) \json_encode([
                         'content' => ['title' => 'Hello'],
-                        'metadata' => ['version' => '1', 'contentSource' => 'slot', 'schema' => ['type' => 'structure']],
+                        'metadata' => [
+                            'version' => '1',
+                            'contentSource' => 'slot',
+                            'schema' => ['type' => 'structure'],
+                        ],
                     ]),
                 ),
             ),
@@ -238,7 +241,10 @@ final class HttpContentFetcherTest extends TestCase
         $mock = new MockClient();
         $mock->addResponse($factory->createResponse(500));
 
-        $provider = new ArrayContentProvider(['home-hero' => ['title' => 'Generated']]);
+        $provider = new ArrayContentProvider(
+            ['home-hero' => [['version' => 1, 'content' => ['en' => ['title' => 'Generated']]]]],
+            'en',
+        );
 
         $response = $this->createFetcher($mock, $factory, contentProvider: $provider)->fetch('home-hero');
 
@@ -252,7 +258,10 @@ final class HttpContentFetcherTest extends TestCase
         $mock = new MockClient();
         $mock->addResponse($factory->createResponse(500));
 
-        $provider = new ArrayContentProvider(['home-hero' => ['title' => 'Generated']]);
+        $provider = new ArrayContentProvider(
+            ['home-hero' => [['version' => 1, 'content' => ['en' => ['title' => 'Generated']]]]],
+            'en',
+        );
 
         $response = $this->createFetcher($mock, $factory, contentProvider: $provider)
             ->fetch('home-hero', FetchOptions::defaults()->withFallback(['title' => 'Explicit']));
@@ -267,7 +276,10 @@ final class HttpContentFetcherTest extends TestCase
         $mock = new MockClient();
         $mock->addResponse($factory->createResponse(500));
 
-        $provider = new ArrayContentProvider(['home-hero' => ['title' => 'Generated']]);
+        $provider = new ArrayContentProvider(
+            ['home-hero' => [['version' => 1, 'content' => ['en' => ['title' => 'Generated']]]]],
+            'en',
+        );
 
         $response = $this->createFetcher($mock, $factory, contentProvider: $provider)->fetch('home-hero@2');
 
@@ -281,8 +293,15 @@ final class HttpContentFetcherTest extends TestCase
         $mock = new MockClient();
         $mock->addResponse($factory->createResponse(500));
 
-        $provider = new DefaultContentProvider(
-            ['home-hero' => ['en' => ['title' => 'Hello'], 'pt-br' => ['title' => 'Olá']]],
+        $provider = new ArrayContentProvider(
+            [
+                'home-hero' => [
+                    [
+                        'version' => 1,
+                        'content' => ['en' => ['title' => 'Hello'], 'pt-br' => ['title' => 'Olá']],
+                    ],
+                ],
+            ],
             'en',
         );
 
