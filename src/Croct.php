@@ -44,18 +44,22 @@ final class Croct implements Plug
 
     private CookieConfiguration $cookieConfiguration;
 
+    private bool $debug;
+
     private function __construct(
         string $appId,
         Session $session,
         Evaluator $evaluator,
         ContentFetcher $contentFetcher,
         CookieConfiguration $cookieConfiguration,
+        bool $debug,
     ) {
         $this->appId = $appId;
         $this->session = $session;
         $this->evaluator = $evaluator;
         $this->contentFetcher = $contentFetcher;
         $this->cookieConfiguration = $cookieConfiguration;
+        $this->debug = $debug;
     }
 
     /**
@@ -73,6 +77,7 @@ final class Croct implements Plug
         ?IdentityResolver $identity = null,
         ?string $baseEndpointUrl = null,
         int $tokenDuration = self::DEFAULT_TOKEN_DURATION,
+        bool $debug = false,
         ?ContentProvider $contentProvider = null,
         ?RequestContext $context = null,
         ?HttpClient $httpClient = null,
@@ -126,6 +131,7 @@ final class Croct implements Plug
                 $contentProvider ?? self::discoverContentProvider(),
             ),
             $cookieConfiguration,
+            $debug,
         );
     }
 
@@ -250,11 +256,17 @@ final class Croct implements Plug
      */
     public function getPlugOptions(): array
     {
-        return [
+        $options = [
             'appId' => $this->appId,
             'disableCidMirroring' => true,
             'cookie' => $this->cookieConfiguration->toBrowserCookies(),
         ];
+
+        if ($this->debug) {
+            $options['debug'] = true;
+        }
+
+        return $options;
     }
 
     /**

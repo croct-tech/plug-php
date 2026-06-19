@@ -198,6 +198,16 @@ final class CroctTest extends TestCase
         );
     }
 
+    #[TestDox('Forwards the debug flag to the browser plug options when enabled.')]
+    public function testForwardsDebugToPlugOptions(): void
+    {
+        $enabled = $this->createCroct(new MockClient(), debug: true);
+        $disabled = $this->createCroct(new MockClient());
+
+        self::assertTrue($enabled->getPlugOptions()['debug'] ?? null);
+        self::assertArrayNotHasKey('debug', $disabled->getPlugOptions());
+    }
+
     #[TestDox('Fetches slot content with the resolved session.')]
     public function testFetchContentUsesResolvedSession(): void
     {
@@ -380,7 +390,7 @@ final class CroctTest extends TestCase
         self::assertSame(self::CLIENT_ID, $emitted['ct_client_id'] ?? null);
     }
 
-    private function createCroct(MockClient $client, ?IdentityStore $storage = null): Plug
+    private function createCroct(MockClient $client, ?IdentityStore $storage = null, bool $debug = false): Plug
     {
         $factory = new Psr17Factory();
         $storage ??= new InMemoryIdentityStore();
@@ -389,6 +399,7 @@ final class CroctTest extends TestCase
             appId: self::APP_ID,
             apiKey: ApiKey::of(EcKeyFactory::IDENTIFIER),
             storage: $storage,
+            debug: $debug,
             context: new RequestContext(),
             httpClient: $client,
             requestFactory: $factory,
